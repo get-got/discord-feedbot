@@ -19,3 +19,16 @@
 
 # Go workspace file
 go.work
+
+# Exclude build command shortcut(s)
+*.cmd
+
+# Exclude runnning dev settings
+/*.json
+/*.jsonc
+
+# Exclude program output
+*.txt
+
+# Exclude program storage
+**

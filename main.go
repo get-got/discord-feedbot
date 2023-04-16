@@ -31,12 +31,15 @@ import (
 * Color/log alts?
 
 --- MODULES ---
+
 * Twitter Tweets ; Start structuring
 * RSS ; Start structuring
 * Instagram ; Start structuring
 * Spotify Artist Releases ; Start structuring
+
 *M Flickr ; Start structuring
 *M System Monitor ; Start structuring
+
 *L Twitter Trends ; Start structuring
 *L NASA APOD ; Start structuring
 *L Plex Titles ; Start structuring

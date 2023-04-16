@@ -2,7 +2,10 @@ module github.com/get-got/discord-feedbot
 
 go 1.19
 
-require github.com/fatih/color v1.14.1
+require (
+	github.com/fatih/color v1.14.1
+	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
+)
 
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect

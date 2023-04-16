@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/fatih/color"
 )
 
-/* TODO:
-
+/*
 --- PROJECT ---
 * Resolve logging standard for now
 * Optional build includes?
@@ -27,32 +31,86 @@ import (
 * Color/log alts?
 
 --- MODULES ---
-* Flickr ; Start structuring
-* Instagram ; Start structuring
-* NASA APOD ; Start structuring
-* Overwatch Patchnotes ; Start structuring
-* Plex Titles ; Start structuring
-* RSS ; Start structuring
-* Spotify Artist Releases ; Start structuring
-* Spotify Playlist Changes ; Start structuring
-* System Monitor ; Start structuring
-* Twitch Chat Track ; Start structuring
-* Twitch Live ; Start structuring
 * Twitter Tweets ; Start structuring
-* Twitter Trends ; Start structuring
+* RSS ; Start structuring
+* Instagram ; Start structuring
+* Spotify Artist Releases ; Start structuring
+*M Flickr ; Start structuring
+*M System Monitor ; Start structuring
+*L Twitter Trends ; Start structuring
+*L NASA APOD ; Start structuring
+*L Plex Titles ; Start structuring
+*L Twitch Chat Track ; Start structuring
+*L Twitch Live ; Start structuring
+*L Spotify Playlist Changes ; Start structuring
 
 */
 
+var (
+
+	//TODO:
+	// Bot
+	/*bot      *discordgo.Session
+	botReady bool = false
+	user     *discordgo.User
+	dgr      *exrouter.Route*/
+
+	// General
+	loop         chan os.Signal
+	timeLaunched time.Time
+)
+
+//TODO:
+/*type module struct {
+	ref          string        // name
+	defaultSleep time.Duration // sleep delay before executing again, TODO: replace with :00 :15 :30 time-based execution?
+}
+
+// only used to track execution
+type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
+	module  *module       // point to parent
+	ref     string        // name
+	sleep   time.Duration // sleep delay before executing again, TODO: replace with :00 :15 :30 time-based execution?
+	lastRan time.Time     // time last ran
+}*/
+
 func init() {
+	loop = make(chan os.Signal, 1)
+	timeLaunched = time.Now()
+
+	//TODO:
+	// ensure program has proper permissions
+
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(color.Output)
-	log.Println(">>> init() ...")
-	//
-	log.Println("<<< init() ...")
+	log.Println(color.HiCyanString(wrapHyphensW(fmt.Sprintf("Welcome to %s v%s", projectName, projectVersion))))
+
+	//TODO: Github Update Check
+
+	//TODO: Settings Parse
+
+	//TODO: Settings Create, with defaults if missing
+
+	//TODO: Database Load, create if missing
 }
 
 func main() {
-	log.Println(">>> main() ...")
-	//
-	log.Println("<<< main() ...")
+
+	//TODO: Discord Login
+	//botLogin()
+	//botReady = true
+
+	//TODO: API Logins
+
+	//TODO: Launch Module Managers ?????????????????????????????????????????????
+	// start tickers? idk yet
+
+	//TODO:
+	//"Startup finished, took %s...", uptime())
+
+	// Infinite loop until interrupted
+	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
+	<-loop
+
+	log.Println(color.HiRedString("Exiting... "))
 }

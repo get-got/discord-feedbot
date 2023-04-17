@@ -12,77 +12,33 @@ import (
 )
 
 /*
---- PROJECT ---
-* Resolve logging standard for now
-* Optional build includes?
-** Start Settings framework ; base settings & layout
-** Start Settings framework ; routine/scheduling/timing structure
-** Start Settings framework ; command interactions ; full remote control, headless given errorless
-** Start Settings framework ; v module settings , extension settings , etc
-*** Start Module framework ;  ^ settings structure
-*** Start Module framework ; routine/scheduling/timing structure
-*** Start Module framework ; command interactions ; full remote control, headless given errorless
-*** Start Module framework ; item cataloging ; db solution
 
--- LIBS --
-* CLI Command Input?
-* More discordgo exts?
-* Routine exts?
-* Color/log alts?
+* Twitter Tweets
+* RSS
+* Instagram
+* Spotify Artist Releases
+* Flickr
 
---- MODULES ---
+*M System Monitor
 
-* Twitter Tweets ; Start structuring
-* RSS ; Start structuring
-* Instagram ; Start structuring
-* Spotify Artist Releases ; Start structuring
+*L Twitter Trends
+*L NASA APOD
+*L Plex Titles
+*L Twitch Chat Track
+*L Twitch Live
+*L Spotify Playlist Changes
 
-*M Flickr ; Start structuring
-*M System Monitor ; Start structuring
-
-*L Twitter Trends ; Start structuring
-*L NASA APOD ; Start structuring
-*L Plex Titles ; Start structuring
-*L Twitch Chat Track ; Start structuring
-*L Twitch Live ; Start structuring
-*L Spotify Playlist Changes ; Start structuring
-
-*/
+ */
 
 var (
-
-	//TODO:
-	// Bot
-	/*bot      *discordgo.Session
-	botReady bool = false
-	user     *discordgo.User
-	dgr      *exrouter.Route*/
-
 	// General
 	loop         chan os.Signal
 	timeLaunched time.Time
 )
 
-//TODO:
-/*type module struct {
-	ref          string        // name
-	defaultSleep time.Duration // sleep delay before executing again, TODO: replace with :00 :15 :30 time-based execution?
-}
-
-// only used to track execution
-type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
-	module  *module       // point to parent
-	ref     string        // name
-	sleep   time.Duration // sleep delay before executing again, TODO: replace with :00 :15 :30 time-based execution?
-	lastRan time.Time     // time last ran
-}*/
-
 func init() {
 	loop = make(chan os.Signal, 1)
 	timeLaunched = time.Now()
-
-	//TODO:
-	// ensure program has proper permissions
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(color.Output)
@@ -90,30 +46,122 @@ func init() {
 
 	//TODO: Github Update Check
 
-	//TODO: Settings Parse
-
-	//TODO: Settings Create, with defaults if missing
+	// Load Configs
+	settingsErrors := loadConfig()
+	if len(settingsErrors) > 0 {
+		log.Println(color.HiRedString("Detected errors in settings..."))
+		for _, err := range settingsErrors {
+			if err != nil {
+				log.Println(color.HiRedString("ERROR: %s", err))
+			}
+		}
+	}
 
 	//TODO: Database Load, create if missing
 }
 
 func main() {
 
-	//TODO: Discord Login
-	//botLogin()
-	//botReady = true
+	if err := openDiscord(); err != nil {
+		log.Println(color.HiRedString("Discord - Login Error: %s", err))
+	}
+	for _, err := range openAPIs() {
+		if err != nil {
+			log.Println(color.HiRedString("API - Login Error: %s", err))
+		}
+	}
 
-	//TODO: API Logins
+	startFeeds()
+	// This will need to be heavily modified to allow for live changes to configs
+	feedsCopy := feeds
+	for key, feed := range feedsCopy {
+		go func(key int, feed moduleFeed) {
+			for {
+				feeds[key].timesRan++
+				feeds[key].lastRan = time.Now()
+				switch feed.moduleType {
+				case feedInstagramAccount:
+					{
+						go handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount))
+					}
+				case feedTwitterAccount:
+					{
+						go handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount))
+					}
+				}
+				time.Sleep(feed.waitMins)
+			}
+		}(key, feed)
+	}
 
-	//TODO: Launch Module Managers ?????????????????????????????????????????????
-	// start tickers? idk yet
-
-	//TODO:
-	//"Startup finished, took %s...", uptime())
+	if generalConfig.Debug {
+		log.Println(color.HiCyanString("Startup finished, took %s...", uptime()))
+	}
 
 	// Infinite loop until interrupted
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
 
 	log.Println(color.HiRedString("Exiting... "))
+}
+
+func openAPIs() []error {
+	var errors []error
+	var tmperr error
+
+	if tmperr = openInstagram(); tmperr != nil {
+		errors = append(errors, tmperr)
+	}
+
+	if tmperr = openTwitter(); tmperr != nil {
+		errors = append(errors, tmperr)
+	}
+
+	return errors
+}
+
+const (
+	feed000 = iota
+
+	feedTwitterAccount
+	feedInstagramAccount
+)
+
+var feeds []moduleFeed
+
+type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
+	moduleType   int
+	moduleConfig interface{} // point to parent
+	waitMins     time.Duration
+	lastRan      time.Time
+	timesRan     int
+}
+
+func startFeeds() {
+	// Instagram, Accounts
+	for _, account := range instagramConfig.Accounts {
+		waitMins := time.Duration(instagramConfig.WaitMins)
+		if account.WaitMins != nil {
+			waitMins = time.Duration(*account.WaitMins)
+		}
+
+		feeds = append(feeds, moduleFeed{
+			moduleType:   feedInstagramAccount,
+			moduleConfig: account,
+			waitMins:     waitMins * time.Minute,
+		})
+	}
+	// Twitter, Accounts
+	for _, account := range twitterConfig.Accounts {
+		waitMins := time.Duration(twitterConfig.WaitMins)
+		if account.WaitMins != nil {
+			waitMins = time.Duration(*account.WaitMins)
+		}
+
+		feeds = append(feeds, moduleFeed{
+			moduleType:   feedTwitterAccount,
+			moduleConfig: account,
+			waitMins:     waitMins * time.Minute,
+		})
+	}
 }

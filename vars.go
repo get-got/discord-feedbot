@@ -10,3 +10,7 @@ const (
 	projectReleaseURL    = projectRepoURL + "/releases/latest"
 	projectReleaseApiURL = "https://api.github.com/repos/" + projectRepo + "/releases/latest"
 )
+
+const (
+	pathData = "data"
+)

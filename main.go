@@ -1,16 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
-	"github.com/fatih/color"
-)
-
 /*
 
 * Twitter Tweets
@@ -29,6 +18,17 @@ import (
 *L Spotify Playlist Changes
 
  */
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/fatih/color"
+)
 
 var (
 	// General
@@ -58,6 +58,7 @@ func init() {
 	}
 
 	//TODO: Database Load, create if missing
+	loadDatabase()
 }
 
 func main() {

@@ -81,6 +81,10 @@ func main() {
 				feeds[key].timesRan++
 				feeds[key].lastRan = time.Now()
 				switch feed.moduleType {
+				case feedRSS_Feed:
+					{
+						go handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed))
+					}
 				case feedInstagramAccount:
 					{
 						go handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount))
@@ -126,6 +130,7 @@ const (
 
 	feedTwitterAccount
 	feedInstagramAccount
+	feedRSS_Feed
 )
 
 var feeds []moduleFeed
@@ -139,6 +144,19 @@ type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
 }
 
 func startFeeds() {
+	// RSS Feeds
+	for _, feed := range rssConfig.Feeds {
+		waitMins := time.Duration(rssConfig.WaitMins)
+		if feed.WaitMins != nil {
+			waitMins = time.Duration(*feed.WaitMins)
+		}
+
+		feeds = append(feeds, moduleFeed{
+			moduleType:   feedRSS_Feed,
+			moduleConfig: feed,
+			waitMins:     waitMins * time.Minute,
+		})
+	}
 	// Instagram, Accounts
 	for _, account := range instagramConfig.Accounts {
 		waitMins := time.Duration(instagramConfig.WaitMins)

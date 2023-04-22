@@ -143,6 +143,7 @@ func loadConfig_Modules_Credentials() error {
 
 func loadConfig_Modules() []error {
 	return []error{
+		loadConfig_Module_RSS(),
 		loadConfig_Module_Instagram(),
 		loadConfig_Module_Twitter(),
 	}

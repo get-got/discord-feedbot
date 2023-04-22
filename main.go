@@ -80,11 +80,8 @@ func main() {
 			for {
 				feeds[key].timesRan++
 				feeds[key].lastRan = time.Now()
+				//TODO: Error handling
 				switch feed.moduleType {
-				case feedRSS_Feed:
-					{
-						go handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed))
-					}
 				case feedInstagramAccount:
 					{
 						go handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount))
@@ -92,6 +89,10 @@ func main() {
 				case feedTwitterAccount:
 					{
 						go handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount))
+					}
+				case feedRSS_Feed:
+					{
+						go handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed))
 					}
 				}
 				time.Sleep(feed.waitMins)

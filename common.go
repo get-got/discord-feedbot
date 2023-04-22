@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -34,4 +35,22 @@ func properExit() {
 	log.Println(color.HiCyanString("--------------------------------------------------------------------------------"))
 	time.Sleep(15 * time.Second)
 	os.Exit(1)
+}
+
+func containsAll(haystack string, needles []string) bool {
+	for _, needle := range needles {
+		if !strings.Contains(haystack, needle) {
+			return false
+		}
+	}
+	return true
+}
+
+func containsAny(haystack string, needles []string) bool {
+	for _, needle := range needles {
+		if strings.Contains(haystack, needle) {
+			return true
+		}
+	}
+	return false
 }

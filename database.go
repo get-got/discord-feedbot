@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -18,10 +19,10 @@ var (
 
 type dbRef struct {
 	gorm.Model
-	ref         string // url, link, etc
-	destination string // discord channels it's sent to
-	module      string
-	timestamp   time.Time
+	Ref       string // url, link, etc
+	Channel   string // discord channel it's sent to
+	Module    string
+	Timestamp time.Time
 }
 
 func loadDatabase() error {
@@ -37,16 +38,17 @@ func loadDatabase() error {
 
 func refCheckSentAnywhere(ref string) bool {
 	var refs []dbRef
-	dbRefs.Where("ref = ?", ref).Find(&refs)
+	dbRefs.Model(&dbRef{}).Where("`ref` = ?", ref).Find(&refs)
 	return len(refs) > 0
 }
 
 func refCheckSentToChannel(ref string, channel string) bool {
 	var refs []dbRef
-	dbRefs.Where("ref = ? AND destination = ?", ref, channel).Find(&refs)
+	dbRefs.Model(&dbRef{}).Where("`channel` = ? AND `ref` = ?", channel, ref).Find(&refs)
+	log.Println(len(refs))
 	return len(refs) > 0
 }
 
 func refLogSent(ref string, channel string, module string) {
-	dbRefs.Create(&dbRef{ref: ref, destination: channel, module: module, timestamp: time.Now()})
+	dbRefs.Create(&dbRef{Ref: ref, Channel: channel, Module: module, Timestamp: time.Now()})
 }

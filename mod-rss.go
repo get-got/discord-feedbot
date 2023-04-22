@@ -16,10 +16,10 @@ var (
 )
 
 type configModuleRSS struct {
-	WaitMins int                          `json:"waitMins,omitempty"`
-	DayLimit int                          `json:"dayLimit,omitempty"` // X days = too old, ignored
-	Tags     []string                     `json:"tags"`
-	Feeds    []configModuleTwitterAccount `json:"feeds"`
+	WaitMins int                    `json:"waitMins,omitempty"`
+	DayLimit int                    `json:"dayLimit,omitempty"` // X days = too old, ignored
+	Tags     []string               `json:"tags"`
+	Feeds    []configModuleRSS_Feed `json:"feeds"`
 }
 
 type configModuleRSS_Feed struct {
@@ -33,8 +33,8 @@ type configModuleRSS_Feed struct {
 	DisableInfo *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
-	AvatarURL            *string `json:"avatarURL,omitempty"`
-	UseTwitterAppearance *string `json:"useTwitterAppearance,omitempty"`
+	//AvatarURL            *string `json:"avatarURL,omitempty"`
+	//UseTwitterAppearance *string `json:"useTwitterAppearance,omitempty"`
 
 	// RULES
 	Blacklist        []string `json:"blacklist"`
@@ -79,5 +79,6 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRSS_Feed(feed configModuleRSS_Feed) {
+	log.Printf(color.HiGreenString("<DEBUG> rss feed event fired: %s"), feed.URL)
 	//
 }

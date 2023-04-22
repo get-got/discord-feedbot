@@ -169,15 +169,13 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 				vibeCheck = checkOtherBlacklist(vibeCheck, feed.BlacklistURL, link)
 			}
 
-			//TODO: Output
-
-			var colorFunc func(string, ...interface{}) string
+			/*var colorFunc func(string, ...interface{}) string
 			if vibeCheck {
 				colorFunc = color.HiGreenString
 			} else {
 				colorFunc = color.HiRedString
 			}
-			log.Println(colorFunc("RSS: %s %s\n\t\t\"%s\"", entry.Updated, link, entry.Title))
+			log.Println(colorFunc("RSS: %s %s\n\t\t\"%s\"", entry.Updated, link, entry.Title))*/
 
 			if vibeCheck { //TODO: AND meets days old criteria
 				for _, destination := range feed.Destinations {

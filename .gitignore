@@ -21,6 +21,7 @@
 # Exclude program output
 *.txt
 
+*.db
 *.json
 *.jsonc
 *.ini

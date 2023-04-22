@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -45,7 +44,6 @@ func refCheckSentAnywhere(ref string) bool {
 func refCheckSentToChannel(ref string, channel string) bool {
 	var refs []dbRef
 	dbRefs.Model(&dbRef{}).Where("`channel` = ? AND `ref` = ?", channel, ref).Find(&refs)
-	log.Println(len(refs))
 	return len(refs) > 0
 }
 

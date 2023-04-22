@@ -297,9 +297,7 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {
-				if refCheckSentToChannel(tweetLink, destination) {
-					log.Println(color.HiMagentaString("%s already sent to %s", tweetLink, destination))
-				} else {
+				if !refCheckSentToChannel(tweetLink, destination) {
 					// SEND
 					_, err = discord.ChannelMessageSend(destination, tweetLink)
 					if err == nil {

@@ -168,7 +168,7 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		// Tweet Vars
 		//TODO: calc & check timespan
 		tweet := tweets[i]
-		tweetPathS := user.ScreenName + "/" + tweet.IdStr
+		//tweetPathS := user.ScreenName + "/" + tweet.IdStr
 		tweetPath := user.ScreenName + "/status/" + tweet.IdStr
 		tweetLink := "https://twitter.com/" + tweetPath
 		/*tweetParent := tweet
@@ -287,13 +287,13 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 
 		//TODO: Output
 
-		var colorFunc func(string, ...interface{}) string
+		/*var colorFunc func(string, ...interface{}) string
 		if vibeCheck {
 			colorFunc = color.HiGreenString
 		} else {
 			colorFunc = color.HiRedString
 		}
-		log.Println(colorFunc("TWEET: %s %s\n\t\t\"%s\"", tweet.CreatedAt, tweetPathS, tweet.FullText))
+		log.Println(colorFunc("TWEET: %s %s\n\t\t\"%s\"", tweet.CreatedAt, tweetPathS, tweet.FullText))*/
 
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {

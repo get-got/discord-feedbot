@@ -20,13 +20,32 @@ var (
 
 type configModuleTwitter struct {
 	WaitMins int                          `json:"waitMins,omitempty"`
+	DayLimit int                          `json:"dayLimit,omitempty"` // X days = too old, ignored
+	Tags     []string                     `json:"tags,omitempty"`
 	Accounts []configModuleTwitterAccount `json:"accounts"`
 }
 
 type configModuleTwitterAccount struct {
-	ID          string `json:"id"`
-	Destination string `json:"destination"`
-	WaitMins    *int   `json:"waitMins,omitempty"`
+	// MAIN
+	ID              string   `json:"id"`
+	Destination     string   `json:"destination"`
+	WaitMins        *int     `json:"waitMins,omitempty"`
+	Tags            []string `json:"tags,omitempty"`
+	ExcludeReplies  *bool    `json:"excludeReplies,omitempty"`
+	IncludeRetweets *bool    `json:"includeRetweets,omitempty"`
+
+	// APPEARANCE
+	OverwriteTwitterAppearance *string `json:"overwriteTwitterAppearance,omitempty"`
+	OverwriteUsername          string  `json:"overwriteUsername,omitempty"`
+	OverwriteAvatar            string  `json:"overwriteAvatar,omitempty"`
+	OverwriteColor             string  `json:"overwriteColor,omitempty"`
+
+	// RULES
+	FilterType        string   `json:"filterType,omitempty"`
+	ListType          string   `json:"listType,omitempty"`
+	Blacklist         []string `json:"blacklist"`
+	Whitelist         []string `json:"whitelist"`
+	BlacklistRetweets []string `json:"blacklistRetweets"`
 }
 
 func loadConfig_Module_Twitter() error {
@@ -98,4 +117,9 @@ func openTwitter() error {
 
 func handleTwitterAccount(account configModuleTwitterAccount) {
 	log.Printf("twitter account event fired: %s", account.ID)
+
+	// DO ALL HANDLING
+	if twitterClient == nil {
+		log.Println("TWITTER CLIENT IS NIL")
+	}
 }

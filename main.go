@@ -128,9 +128,14 @@ func openAPIs() []error {
 const (
 	feed000 = iota
 
-	feedTwitterAccount
 	feedInstagramAccount
+	feedFlickrGroup
+	feedFlickrUser
 	feedRSS_Feed
+	feedSpotifyArtist
+	feedSpotifyPlaylist
+	feedSpotifyPodcast
+	feedTwitterAccount
 )
 
 var feeds []moduleFeed

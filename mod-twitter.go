@@ -20,6 +20,8 @@ var (
 	twitterConfig           configModuleTwitter
 
 	moduleNameTwitterAccounts = "twitter-accounts"
+
+	twitterLogo = "https://i.imgur.com/BEZiTLN.png"
 )
 
 type configModuleTwitter struct {
@@ -164,10 +166,10 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 	if account.MaskAvatar != nil {
 		avatar = *account.MaskAvatar
 	}
-	/*userColor := user.ProfileLinkColor
+	userColor := user.ProfileLinkColor
 	if account.MaskColor != nil {
 		userColor = *account.MaskColor
-	}*/
+	}
 
 	// User Timeline
 	tmpArgs := url.Values{}
@@ -201,6 +203,10 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			}
 		} else if tweet.QuotedStatus != nil { // Quote
 			tweetParent = *tweet.QuotedStatus
+		}*/
+		/*var tweetMediaSource []anaconda.EntityMedia = nil
+		if len(tweetParent.ExtendedEntities.Media) > 0 {
+			tweetMediaSource = tweetParent.ExtendedEntities.Media
 		}*/
 
 		// SETUP CHECK
@@ -292,11 +298,19 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		}*/
 
 		//TODO: Check media type
-		/*if account.FilterType != "" {
+		if account.FilterType != "" {
+			if account.FilterType == "media" {
 
-		}*/
+			} else if account.FilterType == "text" {
 
-		//TODO: Retweet Filter
+			} else if account.FilterType == "images" {
+
+			} else if account.FilterType == "videos" {
+
+			}
+		}
+
+		// Retweet Filter TODO:check
 		if len(account.BlacklistRetweets) > 0 && tweet.RetweetedStatus != nil {
 			for _, handle := range account.BlacklistRetweets {
 				if strings.Contains(tweet.FullText, fmt.Sprintf("RT %s: ", handle)) {
@@ -306,8 +320,13 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			}
 		}
 
-		//TODO: Output
+		// Embed Vars
+		embedDesc := tweet.FullText
+		embedFooterText := "Xm ago, Y likes, Z retweets"
+		embedColor := hexdec(userColor)
+		log.Println(embedColor)
 
+		//TODO: Output
 		/*var colorFunc func(string, ...interface{}) string
 		if vibeCheck {
 			colorFunc = color.HiGreenString
@@ -316,6 +335,7 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		}
 		log.Println(colorFunc("TWEET: %s %s\n\t\t\"%s\"", tweet.CreatedAt, tweetPathS, tweet.FullText))*/
 
+		// PROCESS
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {
 				if !refCheckSentToChannel(tweetLink, destination) {
@@ -324,6 +344,14 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 						Username:  &username,
 						AvatarUrl: &avatar,
 						Content:   &tweetLink,
+						Embeds: &[]discordwebhook.Embed{{
+							Description: &embedDesc,
+							Color:       &embedColor,
+							Footer: &discordwebhook.Footer{
+								Text:    &embedFooterText,
+								IconUrl: &twitterLogo,
+							},
+						}},
 					}, moduleNameTwitterAccounts)
 				}
 			}

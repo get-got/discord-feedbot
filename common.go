@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,4 +55,9 @@ func containsAny(haystack string, needles []string) bool {
 		}
 	}
 	return false
+}
+
+func hexdec(s string) string {
+	ret, _ := strconv.ParseInt(strings.ReplaceAll(s, "#", ""), 16, 32)
+	return fmt.Sprint(ret)
 }

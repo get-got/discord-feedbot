@@ -353,7 +353,6 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			humanize.Time(creationTime),
 			prefixLikes, suffixLikes, prefixRetweets, suffixRetweets)
 		embedColor := hexdec(userColor)
-		log.Println(embedColor)
 
 		//TODO: Embed Author if RT
 

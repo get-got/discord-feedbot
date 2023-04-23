@@ -111,6 +111,12 @@ func openDiscord() error {
 		}
 	}
 
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+			h(s, i)
+		}
+	})
+
 	log.Println(color.HiGreenString("Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
 
 	return nil

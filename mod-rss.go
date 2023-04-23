@@ -31,7 +31,7 @@ type configModuleRSS struct {
 
 type configModuleRSS_Feed struct {
 	// MAIN
-	Feed         string   `json:"feed"`
+	URL          string   `json:"url"`
 	Destinations []string `json:"destinations"`
 	DisplayName  string   `json:"displayName,omitempty"`
 	WaitMins     *int     `json:"waitMins,omitempty"`
@@ -88,16 +88,19 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRSS_Feed(feed configModuleRSS_Feed) error {
-	prefixHere := fmt.Sprintf("handleRSS_Feed(\"%s\"): ", feed.Feed)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.Feed))
+	prefixHere := fmt.Sprintf("handleRSS_Feed(\"%s\"): ", feed.URL)
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.URL))
 	//
 	fp := gofeed.NewParser()
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
-	rss, err := fp.ParseURL(feed.Feed)
+	rss, err := fp.ParseURL(feed.URL)
 	if err != nil {
 		return fmt.Errorf(prefixHere+"error parsing rss feed: %s", err.Error())
 	} else {
-		username := feed.DisplayName
+		username := rss.Title
+		if feed.DisplayName != "" {
+			username = feed.DisplayName
+		}
 		avatar := ""
 
 		if feed.UseTwitter != nil {

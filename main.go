@@ -27,6 +27,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
 )
 
@@ -71,6 +72,16 @@ func main() {
 		if err != nil {
 			log.Println(color.HiRedString("API LOGIN ERROR (%s): %s", api, err))
 		}
+	}
+
+	log.Println("Adding commands...")
+	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
+	for i, v := range commands {
+		cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
+		if err != nil {
+			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
+		}
+		registeredCommands[i] = cmd
 	}
 
 	startFeeds()
@@ -120,6 +131,17 @@ func main() {
 	// Infinite loop until interrupted
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
+
+	log.Println("Removing commands...")
+	for _, v := range registeredCommands {
+		err := discord.ApplicationCommandDelete(discord.State.User.ID, "", v.ID)
+		if err != nil {
+			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+		}
+	}
+
+	log.Println(color.GreenString("Logging out of discord..."))
+	discord.Close()
 
 	log.Println(color.HiRedString("Exiting... "))
 }

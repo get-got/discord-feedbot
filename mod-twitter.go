@@ -9,8 +9,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/gtuk/discordwebhook"
 )
@@ -266,7 +268,9 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			return ok
 		}
 
+		// Init Check
 		vibeCheck = checkLists(vibeCheck, tweet.FullText)
+
 		//TODO: check media titles
 		// THREAD CHECKS
 		if excludeReplies && tweet.FullText[:1] == "@" {
@@ -320,11 +324,39 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			}
 		}
 
+		// Tweet Info
+		prefixLikes := "No"
+		if tweet.FavoriteCount > 0 {
+			prefixLikes = humanize.Comma(int64(tweet.FavoriteCount))
+		}
+		suffixLikes := ""
+		if tweet.FavoriteCount != 1 {
+			suffixLikes = "s"
+		}
+		prefixRetweets := "No"
+		if tweet.RetweetCount > 0 {
+			prefixRetweets = humanize.Comma(int64(tweet.RetweetCount))
+		}
+		suffixRetweets := ""
+		if tweet.RetweetCount != 1 {
+			suffixRetweets = "s"
+		}
+		creationTime, err := tweet.CreatedAtTime()
+		if err != nil {
+			creationTime = time.Now() //TODO: not this
+		}
+
 		// Embed Vars
 		embedDesc := tweet.FullText
-		embedFooterText := "Xm ago, Y likes, Z retweets"
+		embedFooterText := fmt.Sprintf("%s - %s like%s, %s retweet%s",
+			humanize.Time(creationTime),
+			prefixLikes, suffixLikes, prefixRetweets, suffixRetweets)
 		embedColor := hexdec(userColor)
 		log.Println(embedColor)
+
+		//TODO: Embed Author if RT
+
+		//TODO: Embed Media
 
 		//TODO: Output
 		/*var colorFunc func(string, ...interface{}) string
@@ -334,6 +366,10 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			colorFunc = color.HiRedString
 		}
 		log.Println(colorFunc("TWEET: %s %s\n\t\t\"%s\"", tweet.CreatedAt, tweetPathS, tweet.FullText))*/
+
+		//TODO: Log (aside from message sending log)
+
+		//TODO: Send video links after embed (poll highest bitrate)
 
 		// PROCESS
 		if vibeCheck { //TODO: AND meets days old criteria

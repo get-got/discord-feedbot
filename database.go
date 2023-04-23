@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 const (
@@ -26,7 +27,9 @@ type dbRef struct {
 
 func loadDatabase() error {
 	var err error
-	dbRefs, err = gorm.Open(sqlite.Open(pathDatabaseRefs), &gorm.Config{})
+	dbRefs, err = gorm.Open(sqlite.Open(pathDatabaseRefs), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		return err
 	}
@@ -48,5 +51,10 @@ func refCheckSentToChannel(ref string, channel string) bool {
 }
 
 func refLogSent(ref string, channel string, module string) {
-	dbRefs.Create(&dbRef{Ref: ref, Channel: channel, Module: module, Timestamp: time.Now()})
+	dbRefs.Create(&dbRef{
+		Ref:       ref,
+		Channel:   channel,
+		Module:    module,
+		Timestamp: time.Now(),
+	})
 }

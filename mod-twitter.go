@@ -12,6 +12,7 @@ import (
 
 	"github.com/ChimeraCoder/anaconda"
 	"github.com/fatih/color"
+	"github.com/gtuk/discordwebhook"
 )
 
 var (
@@ -38,6 +39,11 @@ type configModuleTwitterAccount struct {
 
 	WaitMins *int `json:"waitMins,omitempty"`
 	DayLimit *int `json:"dayLimit,omitempty"` // X days = too old, ignored
+
+	// APPEARANCE
+	MaskUsername *string `json:"maskUsername,omitempty"`
+	MaskAvatar   *string `json:"maskAvatar,omitempty"`
+	MaskColor    *string `json:"maskColor,omitempty"`
 
 	// RULES
 	ExcludeReplies    *bool      `json:"excludeReplies,omitempty"`
@@ -148,6 +154,21 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 	}
 	user := userInfo[0]
 
+	// User Appearance Vars
+	handle := user.ScreenName
+	username := user.Name
+	if account.MaskUsername != nil {
+		username = *account.MaskUsername
+	}
+	avatar := strings.ReplaceAll(user.ProfileImageUrlHttps, "_normal", "_400x400")
+	if account.MaskAvatar != nil {
+		avatar = *account.MaskAvatar
+	}
+	/*userColor := user.ProfileLinkColor
+	if account.MaskColor != nil {
+		userColor = *account.MaskColor
+	}*/
+
 	// User Timeline
 	tmpArgs := url.Values{}
 	tmpArgs.Add("user_id", account.ID)
@@ -168,8 +189,8 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		// Tweet Vars
 		//TODO: calc & check timespan
 		tweet := tweets[i]
-		//tweetPathS := user.ScreenName + "/" + tweet.IdStr
-		tweetPath := user.ScreenName + "/status/" + tweet.IdStr
+		//tweetPathS := handle + "/" + tweet.IdStr
+		tweetPath := handle + "/status/" + tweet.IdStr
 		tweetLink := "https://twitter.com/" + tweetPath
 		/*tweetParent := tweet
 		if tweet.RetweetedStatus != nil {
@@ -299,12 +320,11 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			for _, destination := range account.Destinations {
 				if !refCheckSentToChannel(tweetLink, destination) {
 					// SEND
-					_, err = discord.ChannelMessageSend(destination, tweetLink)
-					if err == nil {
-						refLogSent(tweetLink, destination, moduleNameTwitterAccounts)
-					} else {
-						log.Println(color.HiRedString("!!! FAILED TO SEND %s TO %s", tweetLink, destination))
-					}
+					sendWebhook(destination, tweetLink, discordwebhook.Message{
+						Username:  &username,
+						AvatarUrl: &avatar,
+						Content:   &tweetLink,
+					}, moduleNameTwitterAccounts)
 				}
 			}
 		}

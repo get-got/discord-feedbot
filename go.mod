@@ -6,6 +6,7 @@ require (
 	github.com/ChimeraCoder/anaconda v2.0.0+incompatible
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/fatih/color v1.14.1
+	github.com/gtuk/discordwebhook v1.1.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/mmcdole/gofeed v1.2.1
 	gopkg.in/ini.v1 v1.67.0

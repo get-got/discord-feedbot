@@ -77,6 +77,7 @@ func openInstagram() error {
 	return nil
 }
 
-func handleInstagramAccount(account configModuleInstagramAccount) {
+func handleInstagramAccount(account configModuleInstagramAccount) error {
 	log.Printf(color.HiGreenString("<DEBUG> instagram account event fired: %s"), account.ID)
+	return nil
 }

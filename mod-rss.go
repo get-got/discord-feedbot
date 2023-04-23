@@ -2,12 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/gtuk/discordwebhook"
 	"github.com/mmcdole/gofeed"
 )
 
@@ -27,7 +31,7 @@ type configModuleRSS struct {
 
 type configModuleRSS_Feed struct {
 	// MAIN
-	URL          string   `json:"url"`
+	Feed         string   `json:"feed"`
 	Destinations []string `json:"destinations"`
 	DisplayName  string   `json:"displayName,omitempty"`
 	WaitMins     *int     `json:"waitMins,omitempty"`
@@ -36,8 +40,8 @@ type configModuleRSS_Feed struct {
 	DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
-	//AvatarURL            *string `json:"avatarURL,omitempty"`
-	//UseTwitterAppearance *string `json:"useTwitterAppearance,omitempty"`
+	Avatar     *string `json:"avatar,omitempty"`
+	UseTwitter *string `json:"useTwitter,omitempty"`
 
 	// RULES
 	Blacklist        [][]string `json:"blacklist"`
@@ -84,16 +88,40 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRSS_Feed(feed configModuleRSS_Feed) error {
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.URL))
+	prefixHere := fmt.Sprintf("handleRSS_Feed(\"%s\"): ", feed.Feed)
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.Feed))
 	//
 	fp := gofeed.NewParser()
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
-	rss, err := fp.ParseURL(feed.URL)
+	rss, err := fp.ParseURL(feed.Feed)
 	if err != nil {
-		return fmt.Errorf("error parsing rss feed: %s", err.Error())
+		return fmt.Errorf(prefixHere+"error parsing rss feed: %s", err.Error())
 	} else {
+		username := feed.DisplayName
+		avatar := ""
 
-		// FOREACH Tweet
+		if feed.UseTwitter != nil {
+			if twitterClient == nil {
+				return errors.New(prefixHere + "feed uses Twitter for appearance but Twitter client is empty")
+			}
+			id64, err := strconv.ParseInt(*feed.UseTwitter, 10, 64)
+			if err != nil {
+				return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but error converting ID to int64: %s", err.Error())
+			}
+			twitterUsers, err := twitterClient.GetUsersLookupByIds([]int64{id64}, url.Values{})
+			if err != nil {
+				return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but failed to fetch twitter user: %s", err.Error())
+			}
+			twitterUser := twitterUsers[0]
+			username = twitterUser.Name
+			avatar = strings.ReplaceAll(twitterUser.ProfileImageUrlHttps, "_normal", "_400x400")
+		}
+
+		if feed.Avatar != nil {
+			avatar = *feed.Avatar
+		}
+
+		// FOREACH Entry
 		for i := len(rss.Items) - 1; i >= 0; i-- { // process oldest to newest
 			entry := rss.Items[i]
 			link := entry.Link
@@ -182,11 +210,14 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 				for _, destination := range feed.Destinations {
 					if !refCheckSentToChannel(link, destination) {
 						// SEND
-						_, err = discord.ChannelMessageSend(destination, link)
-						if err == nil {
-							refLogSent(link, destination, moduleNameRSS)
-						} else {
-							log.Println(color.HiRedString("!!! FAILED TO SEND %s TO %s", link, destination))
+						err = sendWebhook(destination, link, discordwebhook.Message{
+							Username:  &username,
+							AvatarUrl: &avatar,
+							Content:   &link,
+						}, moduleNameRSS)
+						if err != nil {
+							// we want it to process the rest, so no err return
+							log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
 						}
 					}
 				}

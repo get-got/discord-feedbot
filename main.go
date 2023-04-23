@@ -85,7 +85,11 @@ func main() {
 				switch feed.moduleType {
 				case feedInstagramAccount:
 					{
-						go handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount))
+						go func() {
+							if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
+								log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+							}
+						}()
 					}
 				case feedTwitterAccount:
 					{

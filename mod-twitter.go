@@ -128,6 +128,7 @@ func openTwitter() error {
 }
 
 func handleTwitterAccount(account configModuleTwitterAccount) error {
+	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.ID)
 	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.ID))
 
 	if twitterClient == nil {
@@ -376,7 +377,7 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 			for _, destination := range account.Destinations {
 				if !refCheckSentToChannel(tweetLink, destination) {
 					// SEND
-					sendWebhook(destination, tweetLink, discordwebhook.Message{
+					err = sendWebhook(destination, tweetLink, discordwebhook.Message{
 						Username:  &username,
 						AvatarUrl: &avatar,
 						Content:   &tweetLink,
@@ -389,6 +390,10 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 							},
 						}},
 					}, moduleNameTwitterAccounts)
+					if err != nil {
+						// we want it to process the rest, so no err return
+						log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
+					}
 				}
 			}
 		}

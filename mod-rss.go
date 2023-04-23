@@ -48,6 +48,7 @@ type configModuleRSS_Feed struct {
 }
 
 func loadConfig_Module_RSS() error {
+	prefixHere := "loadConfig_Module_RSS(): "
 
 	// LOAD JSON CONFIG
 	if _, err := os.Stat(pathConfigModuleRSS); err != nil {
@@ -71,9 +72,9 @@ func loadConfig_Module_RSS() error {
 			if generalConfig.OutputSettings {
 				s, err := json.MarshalIndent(rssConfig, "", "\t")
 				if err != nil {
-					log.Println(color.HiRedString("failed to output...\t%s", err))
+					log.Println(color.HiRedString(prefixHere+"failed to output...\t%s", err))
 				} else {
-					log.Println(color.HiYellowString("loadConfig_Module_RSS():\n%s", color.YellowString(string(s))))
+					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
 		}
@@ -83,7 +84,7 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRSS_Feed(feed configModuleRSS_Feed) error {
-	log.Printf(color.HiGreenString("<DEBUG> rss feed event fired: %s"), feed.URL)
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.URL))
 	//
 	fp := gofeed.NewParser()
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"

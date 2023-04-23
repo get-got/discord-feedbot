@@ -40,7 +40,8 @@ func init() {
 	loop = make(chan os.Signal, 1)
 	timeLaunched = time.Now()
 
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lmsgprefix)
+	log.SetPrefix("| ")
 	log.SetOutput(color.Output)
 	log.Println(color.HiCyanString(wrapHyphensW(fmt.Sprintf("Welcome to %s v%s", projectName, projectVersion))))
 
@@ -49,10 +50,10 @@ func init() {
 	// Load Configs
 	settingsErrors := loadConfig()
 	if len(settingsErrors) > 0 {
-		log.Println(color.HiRedString("Detected errors in settings..."))
-		for _, err := range settingsErrors {
+		log.Println(color.HiRedString("loadConfig(): Detected errors in settings..."))
+		for section, err := range settingsErrors {
 			if err != nil {
-				log.Println(color.HiRedString("ERROR: %s", err))
+				log.Println(color.RedString("loadConfig()[\"%s\"] ERROR: %s", section, err))
 			}
 		}
 	}
@@ -64,11 +65,11 @@ func init() {
 func main() {
 
 	if err := openDiscord(); err != nil {
-		log.Println(color.HiRedString("Discord - Login Error: %s", err))
+		log.Println(color.HiRedString("DISCORD LOGIN ERROR: %s", err))
 	}
-	for _, err := range openAPIs() {
+	for api, err := range openAPIs() {
 		if err != nil {
-			log.Println(color.HiRedString("API - Login Error: %s", err))
+			log.Println(color.HiRedString("API LOGIN ERROR (%s): %s", api, err))
 		}
 	}
 
@@ -88,11 +89,19 @@ func main() {
 					}
 				case feedTwitterAccount:
 					{
-						go handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount))
+						go func() {
+							if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
+								log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+							}
+						}()
 					}
 				case feedRSS_Feed:
 					{
-						go handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed))
+						go func() {
+							if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
+								log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+							}
+						}()
 					}
 				}
 				time.Sleep(feed.waitMins)
@@ -101,7 +110,7 @@ func main() {
 	}
 
 	if generalConfig.Debug {
-		log.Println(color.HiCyanString("Startup finished, took %s...", uptime()))
+		log.Println(color.HiYellowString("Startup finished, took %s...", uptime()))
 	}
 
 	// Infinite loop until interrupted
@@ -111,16 +120,16 @@ func main() {
 	log.Println(color.HiRedString("Exiting... "))
 }
 
-func openAPIs() []error {
-	var errors []error
+func openAPIs() map[string]error {
+	errors := make(map[string]error)
 	var tmperr error
 
 	if tmperr = openInstagram(); tmperr != nil {
-		errors = append(errors, tmperr)
+		errors["login-instagram"] = tmperr
 	}
 
 	if tmperr = openTwitter(); tmperr != nil {
-		errors = append(errors, tmperr)
+		errors["login-twitter"] = tmperr
 	}
 
 	return errors

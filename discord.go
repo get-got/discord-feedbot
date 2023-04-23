@@ -26,6 +26,7 @@ type configDiscordSettings struct {
 }
 
 func loadConfig_Discord() error {
+	prefixHere := "loadConfig_Discord(): "
 	// TODO: Creation prompts if missing
 
 	// LOAD INI CREDS
@@ -65,9 +66,9 @@ func loadConfig_Discord() error {
 			if generalConfig.OutputSettings {
 				s, err := json.MarshalIndent(discordConfig, "", "\t")
 				if err != nil {
-					log.Println(color.HiRedString("failed to output...\t%s", err))
+					log.Println(color.HiRedString(prefixHere+"failed to output...\t%s", err))
 				} else {
-					log.Println(color.HiYellowString("loadConfig_Discord():\n%s", color.YellowString(string(s))))
+					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
 		}

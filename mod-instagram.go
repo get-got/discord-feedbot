@@ -28,6 +28,7 @@ type configModuleInstagramAccount struct {
 }
 
 func loadConfig_Module_Instagram() error {
+	prefixHere := "loadConfig_Module_Instagram(): "
 	// TODO: Creation prompts if missing
 
 	// LOAD JSON CONFIG
@@ -52,9 +53,9 @@ func loadConfig_Module_Instagram() error {
 			if generalConfig.OutputSettings {
 				s, err := json.MarshalIndent(instagramConfig, "", "\t")
 				if err != nil {
-					log.Println(color.HiRedString("failed to output...\t%s", err))
+					log.Println(color.HiRedString(prefixHere+"failed to output...\t%s", err))
 				} else {
-					log.Println(color.HiYellowString("loadConfig_Module_Instagram():\n%s", color.YellowString(string(s))))
+					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
 		}

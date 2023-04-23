@@ -24,26 +24,27 @@ var (
 	pathConfig = "config"
 )
 
-func loadConfig() []error {
-	var errors []error
+func loadConfig() map[string]error {
+	errors := make(map[string]error)
+
 	var tmperr error
 
 	if tmperr = loadConfig_General(); tmperr != nil {
-		errors = append(errors, tmperr)
+		errors["general"] = tmperr
 	}
 
 	if tmperr = loadConfig_Discord(); tmperr != nil {
-		errors = append(errors, tmperr)
+		errors["discord"] = tmperr
 	}
 
 	if tmperr = loadConfig_Modules_Credentials(); tmperr != nil {
-		errors = append(errors, tmperr)
+		errors["mod-credentials"] = tmperr
 	}
 
 	tmperrs := loadConfig_Modules()
-	for _, err := range tmperrs {
+	for module, err := range tmperrs {
 		if err != nil {
-			errors = append(errors, err)
+			errors[module] = err
 		}
 	}
 
@@ -61,6 +62,7 @@ var (
 )
 
 func loadConfig_General() error {
+	prefixHere := "loadConfig_General(): "
 	// TODO: Creation prompts if missing
 
 	// LOAD JSON CONFIG
@@ -85,9 +87,9 @@ func loadConfig_General() error {
 			if generalConfig.OutputSettings {
 				s, err := json.MarshalIndent(generalConfig, "", "\t")
 				if err != nil {
-					log.Println(color.HiRedString("failed to output...\t%s", err))
+					log.Println(color.HiRedString(prefixHere+"failed to output...\t%s", err))
 				} else {
-					log.Println(color.HiYellowString("loadConfig_General():\n%s", color.YellowString(string(s))))
+					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
 		}
@@ -141,11 +143,11 @@ func loadConfig_Modules_Credentials() error {
 	return nil
 }
 
-func loadConfig_Modules() []error {
-	return []error{
-		loadConfig_Module_RSS(),
-		loadConfig_Module_Instagram(),
-		loadConfig_Module_Twitter(),
+func loadConfig_Modules() map[string]error {
+	return map[string]error{
+		"mod-rss":       loadConfig_Module_RSS(),
+		"mod-instagram": loadConfig_Module_Instagram(),
+		"mod-twitter":   loadConfig_Module_Twitter(),
 	}
 }
 

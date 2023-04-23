@@ -50,6 +50,7 @@ type configModuleTwitterAccount struct {
 }
 
 func loadConfig_Module_Twitter() error {
+	prefixHere := "loadConfig_Module_Twitter(): "
 	// TODO: Creation prompts if missing
 
 	// LOAD JSON CONFIG
@@ -74,9 +75,9 @@ func loadConfig_Module_Twitter() error {
 			if generalConfig.OutputSettings {
 				s, err := json.MarshalIndent(twitterConfig, "", "\t")
 				if err != nil {
-					log.Println(color.HiRedString("failed to output...\t%s", err))
+					log.Println(color.HiRedString(prefixHere+"failed to output...\t%s", err))
 				} else {
-					log.Println(color.HiYellowString("loadConfig_Module_Twitter():\n%s", color.YellowString(string(s))))
+					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
 		}
@@ -117,7 +118,7 @@ func openTwitter() error {
 }
 
 func handleTwitterAccount(account configModuleTwitterAccount) error {
-	log.Println(color.HiGreenString("[ID:%s] <DEBUG> twitter account event fired", account.ID)) //TODO: strip
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.ID))
 
 	if twitterClient == nil {
 		return errors.New("twitter client is invalid")
@@ -146,7 +147,6 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		return fmt.Errorf("[ID:%s] no users found", account.ID)
 	}
 	user := userInfo[0]
-	log.Println(color.HiCyanString("[ID:%s] <DEBUG> Checking account %s, is handle @%s", account.ID, account.ID, user.ScreenName))
 
 	// User Timeline
 	tmpArgs := url.Values{}

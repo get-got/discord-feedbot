@@ -53,13 +53,19 @@ var (
 				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "wait",
-					Description: "RSS Feed Delay (x Minutes)",
+					Description: "Feed Delay (x Minutes)",
 					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "name",
-					Description: "RSS Feed Name",
+					Description: "Feed Name",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "avatar",
+					Description: "Avatar Image URL",
 					Required:    false,
 				},
 				{
@@ -68,7 +74,16 @@ var (
 					Description: "Twitter for Username & Avatar",
 					Required:    false,
 				},
-				{
+				/*
+					//Tags         []string `json:"tags,omitempty"`
+					//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
+					//DisableInfo  *bool    `json:"disableInfo,omitempty"`
+
+					Blacklist    [][]string `json:"blacklist,omitempty"`
+					BlacklistURL [][]string `json:"blacklistURL,omitempty"`
+					Whitelist    [][]string `json:"whitelist,omitempty"`
+				*/
+				/*{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "txt",
 					Description: "xxz",
@@ -87,7 +102,7 @@ var (
 							Value: "cc",
 						},
 					},
-				},
+				},*/
 			},
 		},
 		{
@@ -189,12 +204,19 @@ var (
 		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For adding new module feeds
 
-			if i.Member == nil { //TODO:
-				log.Println(color.HiRedString("ERROR: nil member on command"))
+			var authorUser *discordgo.User
+			if i.Member == nil && i.Message.Author == nil {
 				return
 			}
-
-			if !isBotAdmin(i.Member.User.ID) {
+			if i.Member != nil {
+				authorUser = i.Member.User
+			} else if i.Message.Author != nil {
+				authorUser = i.Message.Author
+			}
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
@@ -205,18 +227,22 @@ var (
 				for _, opt := range options {
 					optionMap[opt.Name] = opt
 				}
-				//
+
 				var newFeed configModuleRSS_Feed
 				newFeed.Destinations = []string{i.ChannelID}
 				if opt, ok := optionMap["url"]; ok {
 					newFeed.URL = opt.StringValue()
 				}
-				if opt, ok := optionMap["name"]; ok {
-					newFeed.Name = opt.StringValue()
-				}
 				if opt, ok := optionMap["wait"]; ok {
 					val := int(opt.IntValue())
 					newFeed.WaitMins = &val
+				}
+				if opt, ok := optionMap["name"]; ok {
+					newFeed.Name = opt.StringValue()
+				}
+				if opt, ok := optionMap["avatar"]; ok {
+					val := opt.StringValue()
+					newFeed.Avatar = &val
 				}
 				if opt, ok := optionMap["twitter"]; ok {
 					//TODO: better error checks
@@ -231,7 +257,9 @@ var (
 						}
 					}
 				}
+
 				rssConfig.Feeds = append(rssConfig.Feeds, newFeed)
+
 				err := saveModuleConfig(feedRSS_Feed)
 				if err != nil {
 					log.Println(color.HiRedString("error saving config")) //TODO:

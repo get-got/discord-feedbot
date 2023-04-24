@@ -84,31 +84,24 @@ func main() {
 			for {
 				feeds[key].timesRan++
 				feeds[key].lastRan = time.Now()
-				//TODO: Error handling
 				switch feed.moduleType {
 				case feedInstagramAccount:
 					{
-						go func() {
-							if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
-								log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
-							}
-						}()
+						if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
+							log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+						}
 					}
 				case feedTwitterAccount:
 					{
-						go func() {
-							if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
-								log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
-							}
-						}()
+						if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
+							log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+						}
 					}
 				case feedRSS_Feed:
 					{
-						go func() {
-							if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
-								log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
-							}
-						}()
+						if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
+							log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+						}
 					}
 				}
 				time.Sleep(feed.waitMins)

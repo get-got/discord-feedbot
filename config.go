@@ -51,6 +51,18 @@ func loadConfig() map[string]error {
 	return errors
 }
 
+func saveConfig(filepath string, i interface{}) error {
+	json, err := json.MarshalIndent(i, "", "\t")
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath, json, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //#endregion
 
 //#region General

@@ -121,3 +121,12 @@ func openDiscord() error {
 
 	return nil
 }
+
+func isBotAdmin(id string) bool {
+	for _, admin := range discordConfig.Admins {
+		if admin == id {
+			return true
+		}
+	}
+	return false
+}

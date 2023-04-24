@@ -27,7 +27,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
 )
 
@@ -74,17 +73,10 @@ func main() {
 		}
 	}
 
-	log.Println("Adding commands...")
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
-	for i, v := range commands {
-		cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
-		if err != nil {
-			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
-		}
-		registeredCommands[i] = cmd
-	}
+	go addSlashCommands()
 
 	startFeeds()
+
 	// This will need to be heavily modified to allow for live changes to configs
 	feedsCopy := feeds
 	for key, feed := range feedsCopy {
@@ -132,13 +124,7 @@ func main() {
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
 
-	log.Println("Removing commands...")
-	for _, v := range registeredCommands {
-		err := discord.ApplicationCommandDelete(discord.State.User.ID, "", v.ID)
-		if err != nil {
-			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
-		}
-	}
+	clearSlashCommands()
 
 	log.Println(color.GreenString("Logging out of discord..."))
 	discord.Close()
@@ -174,10 +160,34 @@ const (
 	feedTwitterAccount
 )
 
+func getFeedTypeName(moduleType int) string {
+	switch moduleType {
+	case feedInstagramAccount:
+		return "Instagram Account"
+	case feedFlickrGroup:
+		return "Flickr Group"
+	case feedFlickrUser:
+		return "Flickr User"
+	case feedRSS_Feed:
+		return "RSS Feed"
+	case feedSpotifyArtist:
+		return "Spotify Artist"
+	case feedSpotifyPlaylist:
+		return "Spotify Playlist"
+	case feedSpotifyPodcast:
+		return "Spotify Podcast"
+	case feedTwitterAccount:
+		return "Twitter Account"
+	}
+	return ""
+}
+
 var feeds []moduleFeed
 
 type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
+	moduleSlot   int
 	moduleType   int
+	moduleRef    string
 	moduleConfig interface{} // point to parent
 	waitMins     time.Duration
 	lastRan      time.Time
@@ -186,40 +196,46 @@ type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
 
 func startFeeds() {
 	// RSS Feeds
-	for _, feed := range rssConfig.Feeds {
+	for k, feed := range rssConfig.Feeds {
 		waitMins := time.Duration(rssConfig.WaitMins)
 		if feed.WaitMins != nil {
 			waitMins = time.Duration(*feed.WaitMins)
 		}
 
 		feeds = append(feeds, moduleFeed{
+			moduleSlot:   k,
 			moduleType:   feedRSS_Feed,
+			moduleRef:    "\"" + feed.URL + "\"",
 			moduleConfig: feed,
 			waitMins:     waitMins * time.Minute,
 		})
 	}
 	// Instagram, Accounts
-	for _, account := range instagramConfig.Accounts {
+	for k, account := range instagramConfig.Accounts {
 		waitMins := time.Duration(instagramConfig.WaitMins)
 		if account.WaitMins != nil {
 			waitMins = time.Duration(*account.WaitMins)
 		}
 
 		feeds = append(feeds, moduleFeed{
+			moduleSlot:   k,
 			moduleType:   feedInstagramAccount,
+			moduleRef:    account.ID,
 			moduleConfig: account,
 			waitMins:     waitMins * time.Minute,
 		})
 	}
 	// Twitter, Accounts
-	for _, account := range twitterConfig.Accounts {
+	for k, account := range twitterConfig.Accounts {
 		waitMins := time.Duration(twitterConfig.WaitMins)
 		if account.WaitMins != nil {
 			waitMins = time.Duration(*account.WaitMins)
 		}
 
 		feeds = append(feeds, moduleFeed{
+			moduleSlot:   k,
 			moduleType:   feedTwitterAccount,
+			moduleRef:    account.ID,
 			moduleConfig: account,
 			waitMins:     waitMins * time.Minute,
 		})

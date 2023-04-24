@@ -25,7 +25,7 @@ var (
 type configModuleRSS struct {
 	WaitMins int                    `json:"waitMins,omitempty"`
 	DayLimit int                    `json:"dayLimit,omitempty"` // X days = too old, ignored
-	Tags     []string               `json:"tags"`
+	Tags     []string               `json:"tags,omitempty"`
 	Feeds    []configModuleRSS_Feed `json:"feeds"`
 }
 
@@ -33,22 +33,22 @@ type configModuleRSS_Feed struct {
 	// MAIN
 	URL          string   `json:"url"`
 	Destinations []string `json:"destinations"`
-	DisplayName  string   `json:"displayName,omitempty"`
+	Name         string   `json:"name,omitempty"`
 	WaitMins     *int     `json:"waitMins,omitempty"`
-	Tags         []string `json:"tags"`
-	IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
-	DisableInfo  *bool    `json:"disableInfo,omitempty"`
+	//Tags         []string `json:"tags,omitempty"`
+	//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
+	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
 	Avatar     *string `json:"avatar,omitempty"`
 	UseTwitter *string `json:"useTwitter,omitempty"`
 
 	// RULES
-	Blacklist        [][]string `json:"blacklist"`
-	BlacklistDomains [][]string `json:"blacklistDomains"`
-	BlacklistURL     [][]string `json:"blacklistURL"`
-	Whitelist        [][]string `json:"whitelist"`
-	ListType         string     `json:"listType,omitempty"`
+	Blacklist    [][]string `json:"blacklist,omitempty"`
+	BlacklistURL [][]string `json:"blacklistURL,omitempty"`
+	Whitelist    [][]string `json:"whitelist,omitempty"`
+	ListType     string     `json:"listType,omitempty"`
+	//BlacklistDomains [][]string `json:"blacklistDomains,omitempty"`
 }
 
 func loadConfig_Module_RSS() error {
@@ -98,8 +98,8 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 		return fmt.Errorf(prefixHere+"error parsing rss feed: %s", err.Error())
 	} else {
 		username := rss.Title
-		if feed.DisplayName != "" {
-			username = feed.DisplayName
+		if feed.Name != "" {
+			username = feed.Name
 		}
 		avatar := ""
 
@@ -196,7 +196,6 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 
 			vibeCheck = checkLists(vibeCheck, entry.Title)
 			vibeCheck = checkLists(vibeCheck, entry.Content)
-			//vibeCheck = checkOtherBlacklist(vibeCheck, feed.BlacklistDomains, )
 			if len(feed.BlacklistURL) > 0 {
 				vibeCheck = checkOtherBlacklist(vibeCheck, feed.BlacklistURL, link)
 			}

@@ -61,3 +61,17 @@ func hexdec(s string) string {
 	ret, _ := strconv.ParseInt(strings.ReplaceAll(s, "#", ""), 16, 32)
 	return fmt.Sprint(ret)
 }
+
+func ssuff(i int) string {
+	if i == 1 {
+		return ""
+	}
+	return "s"
+}
+
+func disableLinks(s string) string {
+	s = strings.ReplaceAll(s, "https://", "")
+	s = strings.ReplaceAll(s, "http://", "")
+	s = strings.ReplaceAll(s, "www.", "")
+	return s
+}

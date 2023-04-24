@@ -77,7 +77,7 @@ func main() {
 
 	startFeeds()
 
-	// This will need to be heavily modified to allow for live changes to configs
+	// This will need to be heavily modified to allow for live changes to configs ***************************
 	feedsCopy := feeds
 	for key, feed := range feedsCopy {
 		go func(key int, feed moduleFeed) {

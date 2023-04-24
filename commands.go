@@ -28,6 +28,10 @@ var (
 			Description: "<WIP>",
 		},
 		{
+			Name:        "ping",
+			Description: "Simple ping pong latency test.",
+		},
+		{
 			Name:        "info",
 			Description: "<WIP> General info about this project.",
 		},
@@ -36,8 +40,8 @@ var (
 			Description: "<WIP> General overview of the bot.",
 		},
 		{
-			Name:        "ping",
-			Description: "Simple ping pong latency test.",
+			Name:        "feeds",
+			Description: "<WIP> General overview of the bot.",
 		},
 
 		{
@@ -135,42 +139,6 @@ var (
 		"help": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 		},
-		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := ""
-			for component, version := range getComponentVersions() {
-				output += fmt.Sprintf("\n%s %s", component, version)
-			}
-			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: output,
-				},
-			})
-			if err != nil {
-				//TODO: error handling
-			}
-		},
-		"status": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := "**ACTIVE FEEDS:**"
-			for _, moduleFeed := range feeds {
-				waitMins := int(moduleFeed.waitMins / time.Minute)
-				output += fmt.Sprintf("\n- **%s #%d** %s \t\t_Last ran %s (%d time%s, every %d minute%s)_",
-					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1,
-					disableLinks(moduleFeed.moduleRef),
-					humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
-					waitMins, ssuff(waitMins),
-				)
-			}
-			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: output,
-				},
-			})
-			if err != nil {
-				//TODO: error handling
-			}
-		},
 		"ping": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			beforePong := time.Now()
 			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -179,9 +147,7 @@ var (
 					Content: "Pong!",
 				},
 			})
-			if err != nil {
-				//TODO: error handling
-			} else {
+			if err == nil {
 				afterPong := time.Now()
 				latency := discord.HeartbeatLatency().Milliseconds()
 				roundtrip := afterPong.Sub(beforePong).Milliseconds()
@@ -190,13 +156,47 @@ var (
 					roundtrip,
 				)
 				//TODO: embed?
-				_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
+				s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 					Content: &content,
 				})
-				if err != nil {
-					//TODO: error handling
-				}
 			}
+		},
+		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			output := ""
+			for component, version := range getComponentVersions() {
+				output += fmt.Sprintf("\n%s %s", component, version)
+			}
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: output,
+				},
+			})
+		},
+		"status": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			/*json, _ := json.MarshalIndent(moduleFeed.moduleConfig, "", "\t")
+			output += fmt.Sprintf("\n• **%s #%d** \t\t_Last ran %s < %d time%s, every %d minute%s >_\n```json\n%s```",
+				getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1,
+				humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
+				waitMins, ssuff(waitMins), json,
+			)*/
+		},
+		"feeds": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			output := "**ACTIVE FEEDS:**\n"
+			for _, moduleFeed := range feeds {
+				waitMins := int(moduleFeed.waitMins / time.Minute)
+				output += fmt.Sprintf("\n• **%s #%d** %s \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1, disableLinks(moduleFeed.moduleRef),
+					humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
+					waitMins, ssuff(waitMins),
+				)
+			}
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: output,
+				},
+			})
 		},
 
 		// MODULE MANAGEMENT COMMANDS

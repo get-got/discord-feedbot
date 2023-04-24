@@ -67,46 +67,17 @@ func main() {
 	if err := openDiscord(); err != nil {
 		log.Println(color.HiRedString("DISCORD LOGIN ERROR: %s", err))
 	}
+	go addSlashCommands()
 	for api, err := range openAPIs() {
 		if err != nil {
 			log.Println(color.HiRedString("API LOGIN ERROR (%s): %s", api, err))
 		}
 	}
 
-	go addSlashCommands()
-
-	startFeeds()
-
-	// This will need to be heavily modified to allow for live changes to configs ***************************
+	indexFeeds()
 	feedsCopy := feeds
-	for key, feed := range feedsCopy {
-		go func(key int, feed moduleFeed) {
-			for {
-				feeds[key].timesRan++
-				feeds[key].lastRan = time.Now()
-				switch feed.moduleType {
-				case feedInstagramAccount:
-					{
-						if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
-							log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
-						}
-					}
-				case feedTwitterAccount:
-					{
-						if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
-							log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
-						}
-					}
-				case feedRSS_Feed:
-					{
-						if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
-							log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
-						}
-					}
-				}
-				time.Sleep(feed.waitMins)
-			}
-		}(key, feed)
+	for key, _ := range feedsCopy {
+		go startFeed(key)
 	}
 
 	if generalConfig.Debug {
@@ -187,7 +158,7 @@ type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
 	timesRan     int
 }
 
-func startFeeds() {
+func indexFeeds() {
 	// RSS Feeds
 	for k, feed := range rssConfig.Feeds {
 		waitMins := time.Duration(rssConfig.WaitMins)
@@ -232,5 +203,34 @@ func startFeeds() {
 			moduleConfig: account,
 			waitMins:     waitMins * time.Minute,
 		})
+	}
+}
+
+func startFeed(key int) {
+	for {
+		feed := &feeds[key]
+		feed.timesRan++
+		feed.lastRan = time.Now()
+		switch feed.moduleType {
+		case feedInstagramAccount:
+			{
+				if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
+					log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+				}
+			}
+		case feedTwitterAccount:
+			{
+				if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
+					log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+				}
+			}
+		case feedRSS_Feed:
+			{
+				if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
+					log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+				}
+			}
+		}
+		time.Sleep(feed.waitMins)
 	}
 }

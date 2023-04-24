@@ -185,8 +185,8 @@ var (
 			output := "**ACTIVE FEEDS:**\n"
 			for _, moduleFeed := range feeds {
 				waitMins := int(moduleFeed.waitMins / time.Minute)
-				output += fmt.Sprintf("\n• **%s #%d** %s \t\t_Last ran %s < %d time%s, every %d minute%s >_",
-					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1, disableLinks(moduleFeed.moduleRef),
+				output += fmt.Sprintf("\n• **%s #%d** \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1, //disableLinks(moduleFeed.moduleRef),
 					humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
 					waitMins, ssuff(waitMins),
 				)
@@ -258,6 +258,7 @@ var (
 					}
 				}
 
+				feedIndex := len(rssConfig.Feeds)
 				rssConfig.Feeds = append(rssConfig.Feeds, newFeed)
 
 				err := saveModuleConfig(feedRSS_Feed)
@@ -275,11 +276,19 @@ var (
 					})
 				}
 
-				/*waitMins := time.Duration(rssConfig.WaitMins)
+				waitMins := time.Duration(rssConfig.WaitMins)
 				if newFeed.WaitMins != nil {
 					waitMins = time.Duration(*newFeed.WaitMins)
-				}*/
-				//TODO: Catalog and spin up feed, *** currently requires restart ***
+				}
+
+				feeds = append(feeds, moduleFeed{
+					moduleSlot:   feedIndex,
+					moduleType:   feedRSS_Feed,
+					moduleRef:    "\"" + newFeed.URL + "\"",
+					moduleConfig: newFeed,
+					waitMins:     waitMins * time.Minute,
+				})
+				go startFeed(feedIndex)
 			}
 		},
 		"rss-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {

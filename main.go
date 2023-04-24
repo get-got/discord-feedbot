@@ -88,7 +88,7 @@ func main() {
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
 
-	clearSlashCommands()
+	//clearSlashCommands()
 
 	log.Println(color.GreenString("Logging out of discord..."))
 	discord.Close()

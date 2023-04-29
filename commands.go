@@ -71,6 +71,14 @@ var (
 		{
 			Name:        "instagram-modify",
 			Description: "<WIP> Modify an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
 		},
 		{
 			Name:        "instagram-delete",
@@ -150,6 +158,14 @@ var (
 		{
 			Name:        "rss-modify",
 			Description: "<WIP> Modify an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
 		},
 		{
 			Name:        "rss-delete",
@@ -191,6 +207,14 @@ var (
 		{
 			Name:        "twitter-modify",
 			Description: "<WIP> Modify an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
 		},
 		{
 			Name:        "twitter-delete",
@@ -274,6 +298,43 @@ var (
 		},
 
 		// MODULE MANAGEMENT COMMANDS
+
+		"instagram-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// For adding new module feeds
+			//TODO: everything
+		},
+		"instagram-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// For modifying existing module feeds
+			var authorUser *discordgo.User
+			if i.Member == nil && i.Message.Author == nil {
+				return
+			}
+			if i.Member != nil {
+				authorUser = i.Member.User
+			} else if i.Message.Author != nil {
+				authorUser = i.Message.Author
+			}
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+				//TODO: everything
+			}
+		},
+		"instagram-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			// For removing existing module feeds
+			//TODO: everything
+		},
 
 		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For adding new module feeds
@@ -459,7 +520,31 @@ var (
 		},
 		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For modifying existing module feeds
-			//TODO: everything
+			var authorUser *discordgo.User
+			if i.Member == nil && i.Message.Author == nil {
+				return
+			}
+			if i.Member != nil {
+				authorUser = i.Member.User
+			} else if i.Message.Author != nil {
+				authorUser = i.Message.Author
+			}
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+				//TODO: everything
+			}
 		},
 		"twitter-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For removing existing module feeds

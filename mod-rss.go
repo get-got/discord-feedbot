@@ -25,17 +25,15 @@ var (
 type configModuleRSS struct {
 	WaitMins int                   `json:"waitMins,omitempty"`
 	DayLimit int                   `json:"dayLimit,omitempty"` // X days = too old, ignored
-	Tags     []string              `json:"tags,omitempty"`
 	Feeds    []configModuleRssFeed `json:"feeds"`
 }
 
 type configModuleRssFeed struct {
 	// MAIN
-	Name         string   `json:"name"`
-	URL          string   `json:"url"`
-	Destinations []string `json:"destinations"`
-	WaitMins     *int     `json:"waitMins,omitempty"`
-	//Tags         []string `json:"tags,omitempty"`
+	Name         string            `json:"name"`
+	URL          string            `json:"url"`
+	Destinations []feedDestination `json:"destinations"`
+	WaitMins     *int              `json:"waitMins,omitempty"`
 	//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
 	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
@@ -211,12 +209,24 @@ func handleRssFeed(feed configModuleRssFeed) error {
 
 			if vibeCheck { //TODO: AND meets days old criteria
 				for _, destination := range feed.Destinations {
-					if !refCheckSentToChannel(link, destination) {
+					if !refCheckSentToChannel(link, destination.Channel) {
+						tags := ""
+						for _, tag := range destination.Tags {
+							if tags == "" {
+								tags = fmt.Sprintf("<@%s>", tag)
+							} else {
+								tags += fmt.Sprintf(", <@%s>", tag)
+							}
+						}
+						if tags != "" {
+							tags += "\n"
+						}
+						reply := tags + link
 						// SEND
-						err = sendWebhook(destination, link, discordwebhook.Message{
+						err = sendWebhook(destination.Channel, link, discordwebhook.Message{
 							Username:  &username,
 							AvatarUrl: &avatar,
-							Content:   &link,
+							Content:   &reply,
 						}, moduleNameRSS)
 						if err != nil {
 							// we want it to process the rest, so no err return
@@ -231,11 +241,49 @@ func handleRssFeed(feed configModuleRssFeed) error {
 	return nil
 }
 
-func existsRssConfig(name string) bool {
-	for _, feed := range rssConfig.Feeds {
+func updateRssConfig(name string, config configModuleRssFeed) bool {
+	feedClone := rssConfig.Feeds
+	for key, feed := range feedClone {
 		if strings.EqualFold(name, feed.Name) {
+			rssConfig.Feeds[key] = config
 			return true
 		}
 	}
+	return false
+}
+
+func getRssConfig(name string) *configModuleRssFeed {
+	for _, feed := range rssConfig.Feeds {
+		if strings.EqualFold(name, feed.Name) {
+			return &feed
+		}
+	}
+	return nil
+}
+
+func getRssConfigIndex(name string) int {
+	for k, feed := range rssConfig.Feeds {
+		if strings.EqualFold(name, feed.Name) {
+			return k
+		}
+	}
+	return -1
+}
+
+func existsRssConfig(name string) bool {
+	return getRssConfig(name) != nil
+}
+
+func deleteRssConfig(name string) bool {
+	if !existsRssConfig(name) {
+		return false
+	}
+
+	index := getRssConfigIndex(name)
+	if index != -1 {
+		rssConfig.Feeds = append(rssConfig.Feeds[:index], rssConfig.Feeds[index+1:]...)
+		return true
+	}
+
 	return false
 }

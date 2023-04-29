@@ -62,6 +62,12 @@ func init() {
 	loadDatabase()
 }
 
+var (
+	instagramAccount_Channel = make(chan moduleFeed)
+	rssFeed_Channel          = make(chan moduleFeed)
+	twitterAccount_Channel   = make(chan moduleFeed)
+)
+
 func main() {
 
 	if err := openDiscord(); err != nil {
@@ -74,14 +80,44 @@ func main() {
 		}
 	}
 
-	indexFeeds()
-	feedsCopy := feeds
-	for key, _ := range feedsCopy {
-		go startFeed(key)
-	}
-
 	if generalConfig.Debug {
 		log.Println(color.HiYellowString("Startup finished, took %s...", uptime()))
+	}
+
+	// Spawn Feeds
+	indexFeeds()
+	feedsClone := feeds
+	for k := range feedsClone {
+		go startFeed(&feeds[k])
+	}
+	for {
+		select {
+		case instagramAccount_Triggered := <-instagramAccount_Channel:
+			{
+				feed := instagramAccount_Triggered
+				log.Println(color.HiMagentaString("instagram %s fired", feed.Name))
+				if err := handleInstagramAccount(feed.Config.(configModuleInstagramAccount)); err != nil {
+					log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+				}
+			}
+		case rssFeed_Triggered := <-rssFeed_Channel:
+			{
+				feed := rssFeed_Triggered
+				log.Println(color.HiMagentaString("rss %s fired", feed.Name))
+				if err := handleRssFeed(feed.Config.(configModuleRssFeed)); err != nil {
+					log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+				}
+			}
+		case twitterAccount_Triggered := <-twitterAccount_Channel:
+			{
+				feed := twitterAccount_Triggered
+				log.Println(color.HiMagentaString("twitter %s fired", feed.Name))
+				if err := handleTwitterAccount(feed.Config.(configModuleTwitterAccount)); err != nil {
+					log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+				}
+			}
+		}
+		time.Sleep(50 * time.Millisecond) // don't wanna loop infinitely with no delay
 	}
 
 	// Infinite loop until interrupted

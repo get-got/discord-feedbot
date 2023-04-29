@@ -1,21 +1,22 @@
 package main
 
 import (
-	"log"
 	"time"
-
-	"github.com/fatih/color"
 )
 
+type feedDestination struct {
+	Channel string   `json:"channel"`
+	Tags    []string `json:"tags,omitempty"`
+}
+
 type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
-	moduleSlot   int
-	moduleType   int
-	moduleName   string
-	moduleRef    string
-	moduleConfig interface{} // point to parent
-	waitMins     int
-	lastRan      time.Time
-	timesRan     int
+	Group    int
+	Name     string
+	Ref      string
+	Config   interface{} // point to parent
+	WaitMins int
+	LastRan  time.Time
+	TimesRan int
 }
 
 var feeds []moduleFeed
@@ -56,81 +57,109 @@ func getFeedTypeName(moduleType int) string {
 }
 
 func indexFeeds() {
+	//feeds = make([]moduleFeed, 0)
 	// RSS Feeds
-	for k, feed := range rssConfig.Feeds {
+	for _, feed := range rssConfig.Feeds {
 		waitMins := rssConfig.WaitMins
 		if feed.WaitMins != nil {
 			waitMins = *feed.WaitMins
 		}
 
 		feeds = append(feeds, moduleFeed{
-			moduleSlot:   k,
-			moduleType:   feedRSS,
-			moduleName:   feed.Name,
-			moduleRef:    "\"" + feed.URL + "\"",
-			moduleConfig: feed,
-			waitMins:     waitMins,
+			Group:    feedRSS,
+			Name:     feed.Name,
+			Ref:      "\"" + feed.URL + "\"",
+			Config:   feed,
+			WaitMins: waitMins,
 		})
 	}
 	// Instagram, Accounts
-	for k, account := range instagramConfig.Accounts {
+	for _, account := range instagramConfig.Accounts {
 		waitMins := instagramConfig.WaitMins
 		if account.WaitMins != nil {
 			waitMins = *account.WaitMins
 		}
 
 		feeds = append(feeds, moduleFeed{
-			moduleSlot:   k,
-			moduleType:   feedInstagramAccount,
-			moduleName:   account.Name,
-			moduleRef:    account.ID,
-			moduleConfig: account,
-			waitMins:     waitMins,
+			Group:    feedInstagramAccount,
+			Name:     account.Name,
+			Ref:      account.ID,
+			Config:   account,
+			WaitMins: waitMins,
 		})
 	}
 	// Twitter, Accounts
-	for k, account := range twitterConfig.Accounts {
+	for _, account := range twitterConfig.Accounts {
 		waitMins := twitterConfig.WaitMins
 		if account.WaitMins != nil {
 			waitMins = *account.WaitMins
 		}
 
 		feeds = append(feeds, moduleFeed{
-			moduleSlot:   k,
-			moduleType:   feedTwitterAccount,
-			moduleName:   account.Name,
-			moduleRef:    account.ID,
-			moduleConfig: account,
-			waitMins:     waitMins,
+			Group:    feedTwitterAccount,
+			Name:     account.Name,
+			Ref:      account.ID,
+			Config:   account,
+			WaitMins: waitMins,
 		})
 	}
 }
 
-func startFeed(key int) {
+func startFeed(feed *moduleFeed) {
 	for {
-		feed := &feeds[key]
-		feed.timesRan++
-		feed.lastRan = time.Now()
-		switch feed.moduleType {
+		if feed == nil { // deleted
+			break
+		}
+		if feed.Name == "" || feed.Ref == "" { // deleted
+			break
+		}
+		feed.TimesRan++
+		feed.LastRan = time.Now()
+		switch feed.Group {
 		case feedInstagramAccount:
 			{
-				if err := handleInstagramAccount(feed.moduleConfig.(configModuleInstagramAccount)); err != nil {
-					log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
-				}
+				instagramAccount_Channel <- *feed
 			}
 		case feedRSS:
 			{
-				if err := handleRssFeed(feed.moduleConfig.(configModuleRssFeed)); err != nil {
-					log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
-				}
+				rssFeed_Channel <- *feed
 			}
 		case feedTwitterAccount:
 			{
-				if err := handleTwitterAccount(feed.moduleConfig.(configModuleTwitterAccount)); err != nil {
-					log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
-				}
+				twitterAccount_Channel <- *feed
 			}
 		}
-		time.Sleep(time.Duration(feed.waitMins * int(time.Minute)))
+		time.Sleep(time.Duration(feed.WaitMins * int(time.Minute)))
 	}
+}
+
+func getModuleFeed(name string, group int) *moduleFeed {
+	for k, feed := range feeds {
+		if feed.Name == name && feed.Group == group {
+			return &feeds[k]
+		}
+	}
+	return nil
+}
+
+func updateFeedConfig(name string, group int, config interface{}) bool {
+	cloneFeeds := feeds
+	for i, feed := range cloneFeeds {
+		if feed.Name == name && feed.Group == group {
+			feeds[i].Config = config
+			return true
+		}
+	}
+	return false
+}
+
+func deleteFeed(name string, group int) bool {
+	cloneFeeds := feeds
+	for i, feed := range cloneFeeds {
+		if feed.Name == name && feed.Group == group {
+			feeds = append(feeds[:i], feeds[i+1:]...)
+			return true
+		}
+	}
+	return false
 }

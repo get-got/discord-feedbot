@@ -120,7 +120,7 @@ func startFeed(key int) {
 			}
 		case feedRSS:
 			{
-				if err := handleRSS_Feed(feed.moduleConfig.(configModuleRSS_Feed)); err != nil {
+				if err := handleRssFeed(feed.moduleConfig.(configModuleRssFeed)); err != nil {
 					log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
 				}
 			}

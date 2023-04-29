@@ -422,7 +422,7 @@ var (
 					optionMap[opt.Name] = opt
 				}
 
-				var newFeed configModuleRSS_Feed
+				var newFeed configModuleRssFeed
 				newFeed.Destinations = []string{i.ChannelID}
 				if opt, ok := optionMap["url"]; ok {
 					newFeed.URL = opt.StringValue()

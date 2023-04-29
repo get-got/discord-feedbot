@@ -23,13 +23,13 @@ var (
 )
 
 type configModuleRSS struct {
-	WaitMins int                    `json:"waitMins,omitempty"`
-	DayLimit int                    `json:"dayLimit,omitempty"` // X days = too old, ignored
-	Tags     []string               `json:"tags,omitempty"`
-	Feeds    []configModuleRSS_Feed `json:"feeds"`
+	WaitMins int                   `json:"waitMins,omitempty"`
+	DayLimit int                   `json:"dayLimit,omitempty"` // X days = too old, ignored
+	Tags     []string              `json:"tags,omitempty"`
+	Feeds    []configModuleRssFeed `json:"feeds"`
 }
 
-type configModuleRSS_Feed struct {
+type configModuleRssFeed struct {
 	// MAIN
 	Name         string   `json:"name"`
 	URL          string   `json:"url"`
@@ -88,8 +88,8 @@ func loadConfig_Module_RSS() error {
 	return nil
 }
 
-func handleRSS_Feed(feed configModuleRSS_Feed) error {
-	prefixHere := fmt.Sprintf("handleRSS_Feed(\"%s\"): ", feed.URL)
+func handleRssFeed(feed configModuleRssFeed) error {
+	prefixHere := fmt.Sprintf("handleRssFeed(\"%s\"): ", feed.URL)
 	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.URL))
 	//
 	fp := gofeed.NewParser()

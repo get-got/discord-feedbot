@@ -55,6 +55,12 @@ var (
 					Required:    true,
 				},
 				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+				{
 					Type:        discordgo.ApplicationCommandOptionInteger,
 					Name:        "wait",
 					Description: "Feed Delay (x Minutes)",
@@ -62,20 +68,20 @@ var (
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "name",
-					Description: "Feed Name",
+					Name:        "twitter",
+					Description: "Twitter for Username & Avatar",
+					Required:    false,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "username",
+					Description: "Webhook Username",
 					Required:    false,
 				},
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "avatar",
-					Description: "Avatar Image URL",
-					Required:    false,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "twitter",
-					Description: "Twitter for Username & Avatar",
+					Description: "Webhook Avatar Image URL",
 					Required:    false,
 				},
 				/*
@@ -233,16 +239,20 @@ var (
 				if opt, ok := optionMap["url"]; ok {
 					newFeed.URL = opt.StringValue()
 				}
+				if opt, ok := optionMap["name"]; ok {
+					newFeed.Name = opt.StringValue()
+				}
 				if opt, ok := optionMap["wait"]; ok {
 					val := int(opt.IntValue())
 					newFeed.WaitMins = &val
 				}
-				if opt, ok := optionMap["name"]; ok {
-					newFeed.Name = opt.StringValue()
-				}
 				if opt, ok := optionMap["avatar"]; ok {
 					val := opt.StringValue()
 					newFeed.Avatar = &val
+				}
+				if opt, ok := optionMap["username"]; ok {
+					val := opt.StringValue()
+					newFeed.Username = &val
 				}
 				if opt, ok := optionMap["twitter"]; ok {
 					//TODO: better error checks
@@ -256,6 +266,14 @@ var (
 							}
 						}
 					}
+				}
+
+				if existsRSSFeed(newFeed.Name) {
+					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{Content: "RSS Feed already exists with that name..."},
+					})
+					return
 				}
 
 				feedIndex := len(rssConfig.Feeds)
@@ -284,6 +302,7 @@ var (
 				feeds = append(feeds, moduleFeed{
 					moduleSlot:   feedIndex,
 					moduleType:   feedRSS_Feed,
+					moduleName:   newFeed.Name,
 					moduleRef:    "\"" + newFeed.URL + "\"",
 					moduleConfig: newFeed,
 					waitMins:     waitMins * time.Minute,

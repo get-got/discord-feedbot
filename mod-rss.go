@@ -31,15 +31,16 @@ type configModuleRSS struct {
 
 type configModuleRSS_Feed struct {
 	// MAIN
+	Name         string   `json:"name"`
 	URL          string   `json:"url"`
 	Destinations []string `json:"destinations"`
-	Name         string   `json:"name,omitempty"`
 	WaitMins     *int     `json:"waitMins,omitempty"`
 	//Tags         []string `json:"tags,omitempty"`
 	//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
 	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
+	Username   *string `json:"username,omitempty"`
 	Avatar     *string `json:"avatar,omitempty"`
 	UseTwitter *string `json:"useTwitter,omitempty"`
 
@@ -98,9 +99,6 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 		return fmt.Errorf(prefixHere+"error parsing rss feed: %s", err.Error())
 	} else {
 		username := rss.Title
-		if feed.Name != "" {
-			username = feed.Name
-		}
 		avatar := ""
 
 		if feed.UseTwitter != nil {
@@ -120,6 +118,9 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 			avatar = strings.ReplaceAll(twitterUser.ProfileImageUrlHttps, "_normal", "_400x400")
 		}
 
+		if feed.Username != nil {
+			username = *feed.Username
+		}
 		if feed.Avatar != nil {
 			avatar = *feed.Avatar
 		}
@@ -228,4 +229,13 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 	}
 
 	return nil
+}
+
+func existsRSSFeed(name string) bool {
+	for _, feed := range rssConfig.Feeds {
+		if strings.EqualFold(name, feed.Name) {
+			return true
+		}
+	}
+	return false
 }

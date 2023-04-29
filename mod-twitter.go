@@ -37,6 +37,7 @@ type configModuleTwitter struct {
 
 type configModuleTwitterAccount struct {
 	// MAIN
+	Name         string   `json:"name"`
 	ID           string   `json:"id"`
 	Destinations []string `json:"destinations"`
 	Tags         []string `json:"tags,omitempty"`

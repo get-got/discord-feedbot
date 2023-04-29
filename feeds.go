@@ -24,12 +24,12 @@ const (
 	feed000 = iota
 
 	feedInstagramAccount
-	feedFlickrGroup
-	feedFlickrUser
+	//feedFlickrGroup
+	//feedFlickrUser
 	feedRSS
-	feedSpotifyArtist
-	feedSpotifyPlaylist
-	feedSpotifyPodcast
+	//feedSpotifyArtist
+	//feedSpotifyPlaylist
+	//feedSpotifyPodcast
 	feedTwitterAccount
 )
 
@@ -37,18 +37,18 @@ func getFeedTypeName(moduleType int) string {
 	switch moduleType {
 	case feedInstagramAccount:
 		return "Instagram Account"
-	case feedFlickrGroup:
-		return "Flickr Group"
-	case feedFlickrUser:
-		return "Flickr User"
+	//case feedFlickrGroup:
+	//	return "Flickr Group"
+	//case feedFlickrUser:
+	//	return "Flickr User"
 	case feedRSS:
 		return "RSS Feed"
-	case feedSpotifyArtist:
-		return "Spotify Artist"
-	case feedSpotifyPlaylist:
-		return "Spotify Playlist"
-	case feedSpotifyPodcast:
-		return "Spotify Podcast"
+	//case feedSpotifyArtist:
+	//	return "Spotify Artist"
+	//case feedSpotifyPlaylist:
+	//	return "Spotify Playlist"
+	//case feedSpotifyPodcast:
+	//	return "Spotify Podcast"
 	case feedTwitterAccount:
 		return "Twitter Account"
 	}

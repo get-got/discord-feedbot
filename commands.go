@@ -282,11 +282,10 @@ var (
 		"feeds": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			output := "**ACTIVE FEEDS:**\n"
 			for _, moduleFeed := range feeds {
-				waitMins := int(moduleFeed.waitMins / time.Minute)
-				output += fmt.Sprintf("\n• **%s #%d** \t\t_Last ran %s < %d time%s, every %d minute%s >_",
-					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1, //disableLinks(moduleFeed.moduleRef),
+				output += fmt.Sprintf("\n• **%s #%d** \"%s\" \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+					getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1, moduleFeed.moduleName,
 					humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
-					waitMins, ssuff(waitMins),
+					moduleFeed.waitMins, ssuff(moduleFeed.waitMins),
 				)
 			}
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -374,7 +373,7 @@ var (
 					moduleName:   newFeed.Name,
 					moduleRef:    newFeed.ID,
 					moduleConfig: newFeed,
-					waitMins:     time.Duration(waitMins),
+					waitMins:     waitMins,
 				})
 				go startFeed(feedIndex)
 			}
@@ -500,7 +499,7 @@ var (
 					moduleName:   newFeed.Name,
 					moduleRef:    "\"" + newFeed.URL + "\"",
 					moduleConfig: newFeed,
-					waitMins:     time.Duration(waitMins),
+					waitMins:     waitMins,
 				})
 				go startFeed(feedIndex)
 			}
@@ -640,7 +639,7 @@ var (
 					moduleName:   newFeed.Name,
 					moduleRef:    newFeed.ID,
 					moduleConfig: newFeed,
-					waitMins:     time.Duration(waitMins),
+					waitMins:     waitMins,
 				})
 				go startFeed(feedIndex)
 			}

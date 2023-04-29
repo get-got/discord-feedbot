@@ -13,7 +13,7 @@ type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
 	moduleName   string
 	moduleRef    string
 	moduleConfig interface{} // point to parent
-	waitMins     time.Duration
+	waitMins     int
 	lastRan      time.Time
 	timesRan     int
 }
@@ -58,9 +58,9 @@ func getFeedTypeName(moduleType int) string {
 func indexFeeds() {
 	// RSS Feeds
 	for k, feed := range rssConfig.Feeds {
-		waitMins := time.Duration(rssConfig.WaitMins)
+		waitMins := rssConfig.WaitMins
 		if feed.WaitMins != nil {
-			waitMins = time.Duration(*feed.WaitMins)
+			waitMins = *feed.WaitMins
 		}
 
 		feeds = append(feeds, moduleFeed{
@@ -74,9 +74,9 @@ func indexFeeds() {
 	}
 	// Instagram, Accounts
 	for k, account := range instagramConfig.Accounts {
-		waitMins := time.Duration(instagramConfig.WaitMins)
+		waitMins := instagramConfig.WaitMins
 		if account.WaitMins != nil {
-			waitMins = time.Duration(*account.WaitMins)
+			waitMins = *account.WaitMins
 		}
 
 		feeds = append(feeds, moduleFeed{
@@ -101,7 +101,7 @@ func indexFeeds() {
 			moduleName:   account.Name,
 			moduleRef:    account.ID,
 			moduleConfig: account,
-			waitMins:     time.Duration(waitMins),
+			waitMins:     waitMins,
 		})
 	}
 }
@@ -131,6 +131,6 @@ func startFeed(key int) {
 				}
 			}
 		}
-		time.Sleep(feed.waitMins * time.Minute)
+		time.Sleep(time.Duration(feed.waitMins * int(time.Minute)))
 	}
 }

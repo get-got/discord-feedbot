@@ -92,6 +92,8 @@ var (
 
 	// https://github.com/bwmarrin/discordgo/blob/master/examples/slash_commands/main.go
 	commands = []*discordgo.ApplicationCommand{
+
+		//#region General
 		{
 			Name:        "help",
 			Description: "<WIP>",
@@ -112,28 +114,9 @@ var (
 			Name:        "feeds",
 			Description: "<WIP> General overview of the bot.",
 		},
+		//#endregion
 
-		{
-			Name:        "instagram-add",
-			Description: "<FUNCTIONING> Add a new feed.",
-			Options: append([]*discordgo.ApplicationCommandOption{{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "id",
-				Description: "Instagram Account ID",
-				Required:    true,
-			}}, genericModuleCommands...),
-		},
-		{
-			Name:        "instagram-modify",
-			Description: "<FUNCTIONING> Modify an existing feed.",
-			Options:     append([]*discordgo.ApplicationCommandOption{}, genericModuleCommands...),
-		},
-		{
-			Name:        "instagram-delete",
-			Description: "<WIP> Delete an existing feed.",
-			Options:     nameCommand,
-		},
-
+		//#region RSS Feeds
 		{
 			Name:        "rss-new",
 			Description: "Add a new feed",
@@ -177,10 +160,12 @@ var (
 			Description: "Display info for an existing feed",
 			Options:     nameCommand,
 		},
+		//#endregion
 
+		//#region Twitter Accounts
 		{
-			Name:        "twitter-add",
-			Description: "<FUNCTIONING> Add a new feed.",
+			Name:        "twitter-new",
+			Description: "Add a new feed",
 			Options: append([]*discordgo.ApplicationCommandOption{{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "handle",
@@ -189,15 +174,34 @@ var (
 			}}, genericModuleCommands...),
 		},
 		{
+			Name:        "twitter-add",
+			Description: "Add this channel to an existing feed",
+			Options:     nameCommand,
+		},
+		{
 			Name:        "twitter-modify",
-			Description: "<FUNCTIONING> Modify an existing feed.",
-			Options:     append([]*discordgo.ApplicationCommandOption{}, genericModuleCommands...),
+			Description: "Modify an existing feed",
+			Options: append(genericModuleCommands, []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "change-handle",
+					Description: "Change Twitter Handle (@)",
+					Required:    false,
+				},
+			}...),
 		},
 		{
 			Name:        "twitter-delete",
-			Description: "<WIP> Delete an existing feed.",
+			Description: "Delete an existing feed",
 			Options:     nameCommand,
 		},
+		{
+			Name:        "twitter-show",
+			Description: "Display info for an existing feed",
+			Options:     nameCommand,
+		},
+		//#endregion
+
 	}
 
 	commandNotAdmin = "Your Discord ID must be listed as an admin in the `discord.json` settings for this bot to use this command."
@@ -205,7 +209,10 @@ var (
 	commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 
 		"help": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
 		},
 		"ping": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			beforePong := time.Now()
@@ -230,10 +237,11 @@ var (
 			}
 		},
 		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := ""
-			for component, version := range getComponentVersions() {
-				output += fmt.Sprintf("\n%s %s", component, version)
-			}
+			output := projectName + " " + projectVersion
+			output += "\ndiscordgo v" + discordgo.VERSION
+			output += "\nDiscord API v" + discordgo.APIVersion
+			output += "\nTwitter API v1.1"
+			output += "\nInstagram API vX"
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
@@ -242,6 +250,10 @@ var (
 			})
 		},
 		"status": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
 			/*json, _ := json.MarshalIndent(moduleFeed.moduleConfig, "", "\t")
 			output += fmt.Sprintf("\n• **%s #%d** \t\t_Last ran %s < %d time%s, every %d minute%s >_\n```json\n%s```",
 				getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1,
@@ -268,8 +280,8 @@ var (
 
 		//#region MODULE MANAGEMENT COMMANDS
 
-		// For adding new module feeds
-		"instagram-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		//#region Instagram Accounts
+		"instagram-new": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
@@ -347,7 +359,13 @@ var (
 				go startFeed(&feeds[feedIndex])
 			}
 		},
-		// For modifying existing module feeds
+		"instagram-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			//
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
+		},
 		"instagram-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
@@ -367,12 +385,19 @@ var (
 				//TODO: everything
 			}
 		},
-		// For removing existing module feeds
 		"instagram-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			//TODO: everything
 		},
+		"instagram-show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			//
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
+		},
+		//#endregion
 
-		// For adding new module feeds
+		//#region RSS Feeds
 		"rss-new": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
@@ -499,7 +524,6 @@ var (
 				go startFeed(&feeds[feedIndex])
 			}
 		},
-		// For adding source channel to existing module feeds
 		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
@@ -553,7 +577,6 @@ var (
 				}
 			}
 		},
-		// For modifying existing module feeds
 		"rss-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
@@ -690,7 +713,6 @@ var (
 				}
 			}
 		},
-		// For removing existing module feeds
 		"rss-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
@@ -797,9 +819,10 @@ var (
 				}
 			}
 		},
+		//#endregion
 
-		// For adding new module feeds
-		"twitter-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		//#region Twitter Accounts
+		"twitter-new": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
 				//TODO: log
@@ -913,7 +936,13 @@ var (
 				go startFeed(&feeds[feedIndex])
 			}
 		},
-		// For modifying existing module feeds
+		"twitter-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			//
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
+		},
 		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			//TODO: everything
 			authorUser := getAuthor(i)
@@ -934,7 +963,6 @@ var (
 				//TODO: everything
 			}
 		},
-		// For removing existing module feeds
 		"twitter-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			//TODO: everything
 			authorUser := getAuthor(i)
@@ -955,6 +983,14 @@ var (
 				//TODO: everything
 			}
 		},
+		"twitter-show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			//
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "wip"},
+			})
+		},
+		//#endregion
 
 		//#endregion
 	}

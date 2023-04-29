@@ -1,7 +1,5 @@
 package main
 
-import "github.com/bwmarrin/discordgo"
-
 const (
 	projectName        = "DISCORD FEEDBOT (DFB)"
 	projectVersion     = "1.0.0-a.0"
@@ -16,13 +14,3 @@ const (
 const (
 	pathData = "data"
 )
-
-func getComponentVersions() map[string]string {
-	return map[string]string{
-		projectName:     projectVersion,
-		"discordgo":     "v" + discordgo.VERSION,
-		"Discord API":   "v" + discordgo.APIVersion,
-		"Twitter API":   "v1.1",
-		"Instagram API": "vX",
-	}
-}

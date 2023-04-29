@@ -131,3 +131,15 @@ func isBotAdmin(id string) bool {
 	}
 	return false
 }
+
+func getAuthor(i *discordgo.InteractionCreate) *discordgo.User {
+	if i.Member == nil && i.Message.Author == nil {
+		return nil
+	}
+	if i.Member != nil {
+		return i.Member.User
+	} else if i.Message.Author != nil {
+		return i.Message.Author
+	}
+	return nil
+}

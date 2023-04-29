@@ -299,21 +299,13 @@ var (
 
 		// MODULE MANAGEMENT COMMANDS
 
+		// For adding new module feeds
 		"instagram-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For adding new module feeds
 			//TODO: everything
 		},
+		// For modifying existing module feeds
 		"instagram-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For modifying existing module feeds
-			var authorUser *discordgo.User
-			if i.Member == nil && i.Message.Author == nil {
-				return
-			}
-			if i.Member != nil {
-				authorUser = i.Member.User
-			} else if i.Message.Author != nil {
-				authorUser = i.Message.Author
-			}
+			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
@@ -331,23 +323,14 @@ var (
 				//TODO: everything
 			}
 		},
+		// For removing existing module feeds
 		"instagram-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For removing existing module feeds
 			//TODO: everything
 		},
 
+		// For adding new module feeds
 		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For adding new module feeds
-
-			var authorUser *discordgo.User
-			if i.Member == nil && i.Message.Author == nil {
-				return
-			}
-			if i.Member != nil {
-				authorUser = i.Member.User
-			} else if i.Message.Author != nil {
-				authorUser = i.Message.Author
-			}
+			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
@@ -439,17 +422,9 @@ var (
 				go startFeed(feedIndex)
 			}
 		},
+		// For modifying existing module feeds
 		"rss-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For modifying existing module feeds
-			var authorUser *discordgo.User
-			if i.Member == nil && i.Message.Author == nil {
-				return
-			}
-			if i.Member != nil {
-				authorUser = i.Member.User
-			} else if i.Message.Author != nil {
-				authorUser = i.Message.Author
-			}
+			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
@@ -467,17 +442,9 @@ var (
 				//TODO: everything
 			}
 		},
+		// For removing existing module feeds
 		"rss-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For removing existing module feeds
-			var authorUser *discordgo.User
-			if i.Member == nil && i.Message.Author == nil {
-				return
-			}
-			if i.Member != nil {
-				authorUser = i.Member.User
-			} else if i.Message.Author != nil {
-				authorUser = i.Message.Author
-			}
+			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
@@ -514,21 +481,14 @@ var (
 			}
 		},
 
+		// For adding new module feeds
 		"twitter-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For adding new module feeds
 			//TODO: everything
 		},
+		// For modifying existing module feeds
 		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For modifying existing module feeds
-			var authorUser *discordgo.User
-			if i.Member == nil && i.Message.Author == nil {
-				return
-			}
-			if i.Member != nil {
-				authorUser = i.Member.User
-			} else if i.Message.Author != nil {
-				authorUser = i.Message.Author
-			}
+			//TODO: everything
+			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
@@ -546,9 +506,26 @@ var (
 				//TODO: everything
 			}
 		},
+		// For removing existing module feeds
 		"twitter-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			// For removing existing module feeds
 			//TODO: everything
+			authorUser := getAuthor(i)
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+				//TODO: everything
+			}
 		},
 	}
 )

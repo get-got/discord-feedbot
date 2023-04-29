@@ -135,14 +135,19 @@ var (
 		},
 
 		{
-			Name:        "rss-add",
-			Description: "<FUNCTIONING> Add a new feed.",
+			Name:        "rss-new",
+			Description: "Add a new feed",
 			Options: append([]*discordgo.ApplicationCommandOption{{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "url",
 				Description: "RSS Feed URL",
 				Required:    true,
 			}}, genericModuleCommands...),
+		},
+		{
+			Name:        "rss-add",
+			Description: "Add this channel to an existing feed",
+			Options:     nameCommand,
 		},
 		{
 			Name:        "rss-modify",
@@ -164,7 +169,7 @@ var (
 		},
 		{
 			Name:        "rss-delete",
-			Description: "<WIP> Delete an existing feed.",
+			Description: "Delete an existing feed",
 			Options:     nameCommand,
 		},
 		{
@@ -368,7 +373,7 @@ var (
 		},
 
 		// For adding new module feeds
-		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		"rss-new": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
@@ -492,6 +497,60 @@ var (
 					WaitMins: waitMins,
 				})
 				go startFeed(&feeds[feedIndex])
+			}
+		},
+		// For adding source channel to existing module feeds
+		"rss-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			authorUser := getAuthor(i)
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+
+				if opt, ok := optionMap["name"]; ok {
+					name := opt.StringValue()
+
+					if !existsRssConfig(name) {
+						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{Content: "No RSS Feed exists with that name..."},
+						})
+						return
+					} else {
+						config := getRssConfig(name) // point to it so it modifies source
+						config.Destinations = append(config.Destinations, feedDestination{Channel: i.ChannelID})
+
+						// Save
+						updateRssConfig(config.Name, *config)
+						if err := saveModuleConfig(feedRSS); err != nil {
+							log.Println(color.HiRedString("error saving config")) //TODO:
+						} else { // success
+							reply := "Modified RSS Feed! Saved to config..."
+							json, err := json.MarshalIndent(config, "", "\t")
+							if err == nil {
+								reply += fmt.Sprintf("\n```json\n%s```", json)
+							}
+							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+								Type: discordgo.InteractionResponseChannelMessageWithSource,
+								Data: &discordgo.InteractionResponseData{Content: reply},
+							})
+						}
+						// Update Live
+						if !updateFeedConfig(config.Name, feedRSS, *config) {
+							log.Println(color.HiRedString("failed to update feed %s/%s...", getFeedTypeName(feedRSS), config.Name))
+						}
+					}
+				}
 			}
 		},
 		// For modifying existing module feeds

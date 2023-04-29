@@ -22,9 +22,12 @@ type configModuleInstagram struct {
 }
 
 type configModuleInstagramAccount struct {
-	ID          string `json:"id"`
-	Destination string `json:"destination"`
-	WaitMins    *int   `json:"waitMins,omitempty"`
+	// Main
+	Name         string   `json:"moduleName"`
+	ID           string   `json:"id"`
+	Destinations []string `json:"destinations"`
+
+	WaitMins *int `json:"waitMins,omitempty"`
 }
 
 func loadConfig_Module_Instagram() error {

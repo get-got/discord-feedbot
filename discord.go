@@ -18,11 +18,12 @@ var (
 )
 
 type configDiscordSettings struct {
-	LogLevel            int      `json:"apiLogLevel,omitempty"`
-	Timeout             int      `json:"timeout,omitempty"`
-	ExitOnBadConnection bool     `json:"exitOnBadConnection,omitempty"`
-	OutputMessages      bool     `json:"outputMessages,omitempty"`
-	Admins              []string `json:"admins,omitempty"`
+	//LogLevel            int      `json:"apiLogLevel,omitempty"`
+	//Timeout             int      `json:"timeout,omitempty"`
+	//ExitOnBadConnection bool     `json:"exitOnBadConnection,omitempty"`
+	//OutputMessages      bool     `json:"outputMessages,omitempty"`
+	Admins         []string `json:"admins"`
+	DeleteCommands bool     `json:"deleteCommands"`
 }
 
 func loadConfig_Discord() error {

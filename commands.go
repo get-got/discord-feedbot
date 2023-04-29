@@ -45,6 +45,47 @@ var (
 		},
 
 		{
+			Name:        "instagram-add",
+			Description: "<WIP> Add a new feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "id",
+					Description: "Instagram Account ID",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "wait",
+					Description: "Feed Delay (x Minutes)",
+					Required:    false,
+				},
+			},
+		},
+		{
+			Name:        "instagram-modify",
+			Description: "<WIP> Modify an existing feed.",
+		},
+		{
+			Name:        "instagram-delete",
+			Description: "<WIP> Delete an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
+		},
+
+		{
 			Name:        "rss-add",
 			Description: "<WIP> Add a new feed.",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -84,15 +125,6 @@ var (
 					Description: "Webhook Avatar Image URL",
 					Required:    false,
 				},
-				/*
-					//Tags         []string `json:"tags,omitempty"`
-					//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
-					//DisableInfo  *bool    `json:"disableInfo,omitempty"`
-
-					Blacklist    [][]string `json:"blacklist,omitempty"`
-					BlacklistURL [][]string `json:"blacklistURL,omitempty"`
-					Whitelist    [][]string `json:"whitelist,omitempty"`
-				*/
 				/*{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "txt",
@@ -122,11 +154,39 @@ var (
 		{
 			Name:        "rss-delete",
 			Description: "<WIP> Delete an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
 		},
 
 		{
 			Name:        "twitter-add",
 			Description: "<WIP> Add a new feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "id",
+					Description: "Twitter Account ID",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "wait",
+					Description: "Feed Delay (x Minutes)",
+					Required:    false,
+				},
+			},
 		},
 		{
 			Name:        "twitter-modify",
@@ -135,6 +195,14 @@ var (
 		{
 			Name:        "twitter-delete",
 			Description: "<WIP> Delete an existing feed.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "name",
+					Description: "Unique Feed Name",
+					Required:    true,
+				},
+			},
 		},
 	}
 
@@ -279,7 +347,7 @@ var (
 				feedIndex := len(rssConfig.Feeds)
 				rssConfig.Feeds = append(rssConfig.Feeds, newFeed)
 
-				err := saveModuleConfig(feedRSS_Feed)
+				err := saveModuleConfig(feedRSS)
 				if err != nil {
 					log.Println(color.HiRedString("error saving config")) //TODO:
 				} else {
@@ -294,37 +362,108 @@ var (
 					})
 				}
 
-				waitMins := time.Duration(rssConfig.WaitMins)
+				waitMins := rssConfig.WaitMins
 				if newFeed.WaitMins != nil {
-					waitMins = time.Duration(*newFeed.WaitMins)
+					waitMins = *newFeed.WaitMins
 				}
 
 				feeds = append(feeds, moduleFeed{
 					moduleSlot:   feedIndex,
-					moduleType:   feedRSS_Feed,
+					moduleType:   feedRSS,
 					moduleName:   newFeed.Name,
 					moduleRef:    "\"" + newFeed.URL + "\"",
 					moduleConfig: newFeed,
-					waitMins:     waitMins * time.Minute,
+					waitMins:     time.Duration(waitMins),
 				})
 				go startFeed(feedIndex)
 			}
 		},
 		"rss-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For modifying existing module feeds
+			var authorUser *discordgo.User
+			if i.Member == nil && i.Message.Author == nil {
+				return
+			}
+			if i.Member != nil {
+				authorUser = i.Member.User
+			} else if i.Message.Author != nil {
+				authorUser = i.Message.Author
+			}
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+				//TODO: everything
+			}
 		},
 		"rss-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For removing existing module feeds
+			var authorUser *discordgo.User
+			if i.Member == nil && i.Message.Author == nil {
+				return
+			}
+			if i.Member != nil {
+				authorUser = i.Member.User
+			} else if i.Message.Author != nil {
+				authorUser = i.Message.Author
+			}
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+
+				if opt, ok := optionMap["name"]; ok {
+					name := opt.StringValue()
+
+					if !existsRSSFeed(name) {
+						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{Content: "No RSS Feed exists with that name..."},
+						})
+						return
+					} else {
+						//TODO: everything
+						// probably need to kill the go routine before deleting from config?
+						/*s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+							Type: discordgo.InteractionResponseChannelMessageWithSource,
+							Data: &discordgo.InteractionResponseData{Content: "RSS Feed already exists with that name..."},
+						})*/
+					}
+				}
+			}
 		},
 
 		"twitter-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For adding new module feeds
+			//TODO: everything
 		},
 		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For modifying existing module feeds
+			//TODO: everything
 		},
 		"twitter-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			// For removing existing module feeds
+			//TODO: everything
 		},
 	}
 )
@@ -344,7 +483,7 @@ func addSlashCommands() {
 	log.Println(color.HiCyanString("Slash commands created!\tYou can now use Discord commands..."))
 }
 
-func clearSlashCommands() {
+func deleteSlashCommands() {
 	log.Println(color.CyanString("Deleting slash commands...\tThis may take a bit..."))
 	for _, v := range slashCommands {
 		err := discord.ApplicationCommandDelete(discord.State.User.ID, "", v.ID)
@@ -357,22 +496,12 @@ func clearSlashCommands() {
 
 func saveModuleConfig(feedType int) error {
 	switch feedType {
-	case feedRSS_Feed:
+	case feedInstagramAccount:
+		return saveConfig(pathConfigModuleInstagram, instagramConfig)
+	case feedRSS:
 		return saveConfig(pathConfigModuleRSS, rssConfig)
 	case feedTwitterAccount:
 		return saveConfig(pathConfigModuleTwitter, twitterConfig)
 	}
 	return nil
-}
-
-func addModuleFeed() {
-
-}
-
-func modifyModuleFeed() {
-
-}
-
-func deleteModuleFeed() {
-
 }

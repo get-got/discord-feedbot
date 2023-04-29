@@ -84,3 +84,12 @@ func handleInstagramAccount(account configModuleInstagramAccount) error {
 	log.Printf(color.HiGreenString("<DEBUG> instagram account event fired: %s"), account.ID)
 	return nil
 }
+
+func existsInstagramConfig(name string) bool {
+	for _, feed := range instagramConfig.Accounts {
+		if strings.EqualFold(name, feed.Name) {
+			return true
+		}
+	}
+	return false
+}

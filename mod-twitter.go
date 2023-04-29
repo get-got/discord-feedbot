@@ -401,3 +401,12 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 
 	return nil
 }
+
+func existsTwitterConfig(name string) bool {
+	for _, feed := range twitterConfig.Accounts {
+		if strings.EqualFold(name, feed.Name) {
+			return true
+		}
+	}
+	return false
+}

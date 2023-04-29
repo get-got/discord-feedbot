@@ -231,7 +231,7 @@ func handleRSS_Feed(feed configModuleRSS_Feed) error {
 	return nil
 }
 
-func existsRSSFeed(name string) bool {
+func existsRssConfig(name string) bool {
 	for _, feed := range rssConfig.Feeds {
 		if strings.EqualFold(name, feed.Name) {
 			return true

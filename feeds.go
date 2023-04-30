@@ -9,7 +9,7 @@ type feedDestination struct {
 	Tags    []string `json:"tags,omitempty"`
 }
 
-type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
+type feedThread struct {
 	Group    int
 	Name     string
 	Ref      string
@@ -19,23 +19,29 @@ type moduleFeed struct { // i.e. thread, account, source, etc. sub of module
 	TimesRan int
 }
 
-var feeds []moduleFeed
+var feeds []feedThread
 
 const (
 	feed000 = iota
 
 	feedInstagramAccount
+
 	//feedFlickrGroup
 	//feedFlickrUser
+
 	feedRSS
+
 	//feedSpotifyArtist
 	//feedSpotifyPlaylist
 	//feedSpotifyPodcast
+
 	feedTwitterAccount
 )
 
 func getFeedTypeName(moduleType int) string {
 	switch moduleType {
+	case feed000:
+		return "PLACEHOLDER"
 	case feedInstagramAccount:
 		return "Instagram Account"
 	//case feedFlickrGroup:
@@ -65,7 +71,7 @@ func indexFeeds() {
 			waitMins = *feed.WaitMins
 		}
 
-		feeds = append(feeds, moduleFeed{
+		feeds = append(feeds, feedThread{
 			Group:    feedRSS,
 			Name:     feed.Name,
 			Ref:      "\"" + feed.URL + "\"",
@@ -80,7 +86,7 @@ func indexFeeds() {
 			waitMins = *account.WaitMins
 		}
 
-		feeds = append(feeds, moduleFeed{
+		feeds = append(feeds, feedThread{
 			Group:    feedInstagramAccount,
 			Name:     account.Name,
 			Ref:      account.ID,
@@ -95,7 +101,7 @@ func indexFeeds() {
 			waitMins = *account.WaitMins
 		}
 
-		feeds = append(feeds, moduleFeed{
+		feeds = append(feeds, feedThread{
 			Group:    feedTwitterAccount,
 			Name:     account.Name,
 			Ref:      account.ID,
@@ -105,7 +111,7 @@ func indexFeeds() {
 	}
 }
 
-func startFeed(feed *moduleFeed) {
+func startFeed(feed *feedThread) {
 	for {
 		if feed == nil { // deleted
 			break
@@ -133,7 +139,7 @@ func startFeed(feed *moduleFeed) {
 	}
 }
 
-func getModuleFeed(name string, group int) *moduleFeed {
+func getModuleFeed(name string, group int) *feedThread {
 	for k, feed := range feeds {
 		if feed.Name == name && feed.Group == group {
 			return &feeds[k]

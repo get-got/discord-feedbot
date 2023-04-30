@@ -112,7 +112,33 @@ var (
 		},
 		{
 			Name:        "feeds",
-			Description: "<WIP> General overview of the bot.",
+			Description: "List active feeds; filterable",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionInteger,
+					Name:        "filter",
+					Description: "Filter by group",
+					Required:    false,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{
+							Name:  "ALL (Default)",
+							Value: -1,
+						},
+						{
+							Name:  "Instagram Accounts",
+							Value: feedInstagramAccount,
+						},
+						{
+							Name:  "RSS Feeds",
+							Value: feedRSS,
+						},
+						{
+							Name:  "Twitter Accounts",
+							Value: feedTwitterAccount,
+						},
+					},
+				},
+			},
 		},
 		//#endregion
 
@@ -256,20 +282,48 @@ var (
 			//TODO: everything
 		},
 		"feeds": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := ""
-			for _, moduleFeed := range feeds {
-				output += fmt.Sprintf("\n• %s: `%s` \t\t_Last ran %s < %d time%s, every %d minute%s >_",
-					getFeedTypeName(moduleFeed.Group), moduleFeed.Name,
-					humanize.Time(moduleFeed.LastRan), moduleFeed.TimesRan, ssuff(moduleFeed.TimesRan),
-					moduleFeed.WaitMins, ssuff(moduleFeed.WaitMins),
-				)
+			authorUser := getAuthor(i)
+			if authorUser == nil {
+				return
 			}
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{
-					Content: output,
-				},
-			})
+			if !isBotAdmin(authorUser.ID) {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
+				})
+			} else {
+				options := i.ApplicationCommandData().Options
+				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+				for _, opt := range options {
+					optionMap[opt.Name] = opt
+				}
+
+				filter := -1
+
+				if opt, ok := optionMap["filter"]; ok {
+					filter = int(opt.IntValue())
+				}
+
+				output := ""
+				for _, feedThread := range feeds {
+					if filter != -1 {
+						if feedThread.Group != filter {
+							continue
+						}
+					}
+					output += fmt.Sprintf("\n• %s: `%s` \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+						getFeedTypeName(feedThread.Group), feedThread.Name,
+						humanize.Time(feedThread.LastRan), feedThread.TimesRan, ssuff(feedThread.TimesRan),
+						feedThread.WaitMins, ssuff(feedThread.WaitMins),
+					)
+				}
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: output,
+					},
+				})
+			}
 		},
 
 		//#region MODULE MANAGEMENT COMMANDS
@@ -343,7 +397,7 @@ var (
 					waitMins = *newFeed.WaitMins
 				}
 
-				feeds = append(feeds, moduleFeed{
+				feeds = append(feeds, feedThread{
 					Group:    feedInstagramAccount,
 					Name:     newFeed.Name,
 					Ref:      newFeed.ID,
@@ -508,7 +562,7 @@ var (
 				if newFeed.WaitMins != nil {
 					waitMins = *newFeed.WaitMins
 				}
-				feeds = append(feeds, moduleFeed{
+				feeds = append(feeds, feedThread{
 					Group:    feedRSS,
 					Name:     newFeed.Name,
 					Ref:      "\"" + newFeed.URL + "\"",
@@ -920,7 +974,7 @@ var (
 					waitMins = *newFeed.WaitMins
 				}
 
-				feeds = append(feeds, moduleFeed{
+				feeds = append(feeds, feedThread{
 					Group:    feedTwitterAccount,
 					Name:     newFeed.Name,
 					Ref:      newFeed.ID,

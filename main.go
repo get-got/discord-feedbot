@@ -63,9 +63,9 @@ func init() {
 }
 
 var (
-	instagramAccount_Channel = make(chan moduleFeed)
-	rssFeed_Channel          = make(chan moduleFeed)
-	twitterAccount_Channel   = make(chan moduleFeed)
+	instagramAccount_Channel = make(chan feedThread)
+	rssFeed_Channel          = make(chan feedThread)
+	twitterAccount_Channel   = make(chan feedThread)
 )
 
 func main() {

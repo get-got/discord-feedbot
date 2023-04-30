@@ -198,19 +198,17 @@ var (
 		{
 			Name:        "rss-new",
 			Description: "Add a new feed",
-			Options: append([]*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "url",
-					Description: "RSS Feed URL",
-					Required:    true,
-				},
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "twitter",
-					Description: "Twitter for Username & Avatar",
-					Required:    false,
-				}}, genericCommandOpts...),
+			Options: append(append([]*discordgo.ApplicationCommandOption{{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "url",
+				Description: "RSS Feed URL",
+				Required:    true,
+			}}, genericCommandOpts...), []*discordgo.ApplicationCommandOption{{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "twitter",
+				Description: "Twitter for Username & Avatar",
+				Required:    false,
+			}}...),
 		},
 		{
 			Name:        "rss-add",

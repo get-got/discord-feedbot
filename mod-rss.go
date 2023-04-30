@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
 	"github.com/gtuk/discordwebhook"
 	"github.com/mmcdole/gofeed"
@@ -241,22 +242,87 @@ func handleRssFeed(feed configModuleRssFeed) error {
 	return nil
 }
 
-func updateRssConfig(name string, config configModuleRssFeed) bool {
-	feedClone := rssConfig.Feeds
-	for key, feed := range feedClone {
-		if strings.EqualFold(name, feed.Name) {
-			rssConfig.Feeds[key] = config
-			return true
+func handleRssCmdOpts(config *configModuleRssFeed,
+	optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption,
+	s *discordgo.Session, i *discordgo.InteractionCreate) error {
+
+	// Optional Vars
+	if opt, ok := optionMap["change-url"]; ok {
+		config.URL = opt.StringValue()
+	}
+	if opt, ok := optionMap["tag"]; ok {
+		tagged := opt.UserValue(s)
+		if tagged != nil {
+			destClone := config.Destinations
+			for key, destination := range destClone {
+				if destination.Channel == i.ChannelID {
+					config.Destinations[key].Tags = []string{tagged.ID}
+				}
+			}
 		}
 	}
-	return false
-}
-
-func getRssConfig(name string) *configModuleRssFeed {
-	for _, feed := range rssConfig.Feeds {
-		if strings.EqualFold(name, feed.Name) {
-			return &feed
+	if opt, ok := optionMap["wait"]; ok {
+		val := int(opt.IntValue())
+		config.WaitMins = &val
+	}
+	if opt, ok := optionMap["avatar"]; ok {
+		val := opt.StringValue()
+		config.Avatar = &val
+	}
+	if opt, ok := optionMap["username"]; ok {
+		val := opt.StringValue()
+		config.Username = &val
+	}
+	if opt, ok := optionMap["twitter"]; ok {
+		if twitterClient == nil {
+			//TODO: log
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{Content: "Twitter Client is not connected..."},
+			})
+			return errors.New("twitter client is nil")
+		} else {
+			handle := opt.StringValue()
+			userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
+			if err == nil {
+				//TODO: log
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{Content: "ERROR FETCHING USERS..."},
+				})
+				return fmt.Errorf("error fetching users: %s", err.Error())
+			} else {
+				if len(userResults) > 0 {
+					config.UseTwitter = &userResults[0].IdStr
+				} else {
+					//TODO: log
+					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+						Type: discordgo.InteractionResponseChannelMessageWithSource,
+						Data: &discordgo.InteractionResponseData{Content: "No Twitter users found for this handle..."},
+					})
+					return errors.New("no twitter users found for this handle")
+				}
+			}
 		}
+	}
+	// Optional Vars -Lists
+	if opt, ok := optionMap["blacklist"]; ok {
+		var list []string
+		list = append(list, strings.Split(opt.StringValue(), "|")...)
+		config.Blacklist = append(config.Blacklist, list)
+	}
+	if opt, ok := optionMap["whitelist"]; ok {
+		var list []string
+		list = append(list, strings.Split(opt.StringValue(), "|")...)
+		config.Whitelist = append(config.Whitelist, list)
+	}
+	if opt, ok := optionMap["list-type"]; ok {
+		config.ListType = opt.StringValue()
+	}
+	if opt, ok := optionMap["blacklist-url"]; ok {
+		var list []string
+		list = append(list, strings.Split(opt.StringValue(), "|")...)
+		config.BlacklistURL = append(config.BlacklistURL, list)
 	}
 	return nil
 }
@@ -270,20 +336,40 @@ func getRssConfigIndex(name string) int {
 	return -1
 }
 
+func getRssConfig(name string) *configModuleRssFeed {
+	i := getRssConfigIndex(name)
+	if i == -1 {
+		return nil
+	} else {
+		return &rssConfig.Feeds[i]
+	}
+}
+
 func existsRssConfig(name string) bool {
 	return getRssConfig(name) != nil
 }
 
-func deleteRssConfig(name string) bool {
-	if !existsRssConfig(name) {
-		return false
+func updateRssConfig(name string, config configModuleRssFeed) bool {
+	feedClone := rssConfig.Feeds
+	for key, feed := range feedClone {
+		if strings.EqualFold(name, feed.Name) {
+			rssConfig.Feeds[key] = config
+			return true
+		}
 	}
+	return false
+}
 
+func deleteRssConfig(name string) error {
 	index := getRssConfigIndex(name)
 	if index != -1 {
+		// Remove from loaded config
 		rssConfig.Feeds = append(rssConfig.Feeds[:index], rssConfig.Feeds[index+1:]...)
-		return true
+		// Remove from live feeds
+		if !deleteFeed(name, feedRSS) {
+			return errors.New("failed to delete from live feeds")
+		}
+		return nil
 	}
-
-	return false
+	return errors.New("rss config does not exist")
 }

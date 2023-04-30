@@ -85,7 +85,7 @@ func main() {
 	}
 
 	// Spawn Feeds
-	indexFeeds()
+	catalogFeeds()
 	feedsClone := feeds
 	for k := range feedsClone {
 		go startFeed(&feeds[k])
@@ -107,7 +107,7 @@ func main() {
 				}
 			case twitterAccount_Triggered := <-twitterAccount_Channel:
 				{
-					if err := handleTwitterAccount(twitterAccount_Triggered.Config.(configModuleTwitterAccount)); err != nil {
+					if err := handleTwitterAcc(twitterAccount_Triggered.Config.(configModuleTwitterAcc)); err != nil {
 						log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
 					}
 				}

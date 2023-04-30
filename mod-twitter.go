@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
+	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/gtuk/discordwebhook"
@@ -32,18 +33,18 @@ type configModuleTwitter struct {
 	WaitMins int `json:"waitMins,omitempty"`
 	DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
-	Accounts []configModuleTwitterAccount `json:"accounts"`
+	Accounts []configModuleTwitterAcc `json:"accounts"`
 }
 
-type configModuleTwitterAccount struct {
+type configModuleTwitterAcc struct {
 	// MAIN
-	Name         string   `json:"name"`
-	ID           string   `json:"id"`
-	Destinations []string `json:"destinations"`
-	Tags         []string `json:"tags,omitempty"`
+	Name         string            `json:"name"`
+	ID           string            `json:"id"`
+	Destinations []feedDestination `json:"destinations"`
+	Tags         []string          `json:"tags,omitempty"`
 
 	WaitMins *int `json:"waitMins,omitempty"`
-	DayLimit *int `json:"dayLimit,omitempty"` // X days = too old, ignored
+	//DayLimit *int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
 	// APPEARANCE
 	MaskUsername *string `json:"maskUsername,omitempty"`
@@ -54,10 +55,10 @@ type configModuleTwitterAccount struct {
 	ExcludeReplies    *bool      `json:"excludeReplies,omitempty"`
 	IncludeRetweets   *bool      `json:"includeRetweets,omitempty"`
 	FilterType        string     `json:"filterType,omitempty"`
-	ListType          string     `json:"listType,omitempty"`
 	Blacklist         [][]string `json:"blacklist"`
 	Whitelist         [][]string `json:"whitelist"`
-	BlacklistRetweets []string   `json:"blacklistRetweetsFrom"`
+	ListType          string     `json:"listType,omitempty"`
+	BlacklistRetweets []string   `json:"blacklistRetweetsFrom"` //TODO: command control
 }
 
 func loadConfig_Module_Twitter() error {
@@ -128,7 +129,7 @@ func openTwitter() error {
 	return nil
 }
 
-func handleTwitterAccount(account configModuleTwitterAccount) error {
+func handleTwitterAcc(account configModuleTwitterAcc) error {
 	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.ID)
 	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.ID))
 
@@ -375,9 +376,9 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 		// PROCESS
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {
-				if !refCheckSentToChannel(tweetLink, destination) {
+				if !refCheckSentToChannel(tweetLink, destination.Channel) {
 					// SEND
-					err = sendWebhook(destination, tweetLink, discordwebhook.Message{
+					err = sendWebhook(destination.Channel, tweetLink, discordwebhook.Message{
 						Username:  &username,
 						AvatarUrl: &avatar,
 						Content:   &tweetLink,
@@ -402,11 +403,129 @@ func handleTwitterAccount(account configModuleTwitterAccount) error {
 	return nil
 }
 
-func existsTwitterConfig(name string) bool {
-	for _, feed := range twitterConfig.Accounts {
+func handleTwitterAccCmdOpts(config *configModuleTwitterAcc,
+	optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption,
+	s *discordgo.Session, i *discordgo.InteractionCreate) error {
+
+	// Optional Vars
+	if opt, ok := optionMap["change-handle"]; ok {
+		if twitterClient == nil {
+			return errors.New("twitter client is not connected")
+		} else {
+			handle := opt.StringValue()
+			userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
+			if err == nil {
+				return errors.New("error fetching users: " + err.Error())
+			} else {
+				if len(userResults) > 0 {
+					userResult := userResults[0]
+					config.ID = userResult.IdStr
+				} else {
+					return errors.New("no twitter users found for this handle")
+				}
+			}
+		}
+	}
+	if opt, ok := optionMap["tag"]; ok {
+		tagged := opt.UserValue(s)
+		if tagged != nil {
+			destClone := config.Destinations
+			for key, destination := range destClone {
+				if destination.Channel == i.ChannelID {
+					config.Destinations[key].Tags = []string{tagged.ID}
+				}
+			}
+		}
+	}
+	if opt, ok := optionMap["wait"]; ok {
+		val := int(opt.IntValue())
+		config.WaitMins = &val
+	}
+	// Optional Vars - Appearance
+	if opt, ok := optionMap["username"]; ok {
+		val := opt.StringValue()
+		config.MaskUsername = &val
+	}
+	if opt, ok := optionMap["avatar"]; ok {
+		val := opt.StringValue()
+		config.MaskAvatar = &val
+	}
+	if opt, ok := optionMap["color"]; ok { //TODO: conversion?
+		val := opt.StringValue()
+		config.MaskColor = &val
+	}
+	// Optional Vars - Rules
+	if opt, ok := optionMap["exclude-replies"]; ok {
+		val := opt.BoolValue()
+		config.ExcludeReplies = &val
+	}
+	if opt, ok := optionMap["include-retweets"]; ok {
+		val := opt.BoolValue()
+		config.IncludeRetweets = &val
+	}
+	if opt, ok := optionMap["filter-type"]; ok {
+		config.FilterType = opt.StringValue()
+	}
+	// Optional Vars - Lists
+	if opt, ok := optionMap["blacklist"]; ok {
+		var list []string
+		list = append(list, strings.Split(opt.StringValue(), "|")...)
+		config.Blacklist = append(config.Blacklist, list)
+	}
+	if opt, ok := optionMap["whitelist"]; ok {
+		var list []string
+		list = append(list, strings.Split(opt.StringValue(), "|")...)
+		config.Whitelist = append(config.Whitelist, list)
+	}
+	if opt, ok := optionMap["list-type"]; ok {
+		config.ListType = opt.StringValue()
+	}
+	return nil
+}
+
+func getTwitterAccConfigIndex(name string) int {
+	for k, feed := range twitterConfig.Accounts {
 		if strings.EqualFold(name, feed.Name) {
+			return k
+		}
+	}
+	return -1
+}
+
+func getTwitterAccConfig(name string) *configModuleTwitterAcc {
+	i := getTwitterAccConfigIndex(name)
+	if i == -1 {
+		return nil
+	} else {
+		return &twitterConfig.Accounts[i]
+	}
+}
+
+func existsTwitterAccConfig(name string) bool {
+	return getTwitterAccConfig(name) != nil
+}
+
+func updateTwitterAccConfig(name string, config configModuleTwitterAcc) bool {
+	feedClone := twitterConfig.Accounts
+	for key, feed := range feedClone {
+		if strings.EqualFold(name, feed.Name) {
+			twitterConfig.Accounts[key] = config
 			return true
 		}
 	}
 	return false
+}
+
+func deleteTwitterAccConfig(name string) error {
+	index := getTwitterAccConfigIndex(name)
+	if index != -1 {
+		// Remove from loaded config
+		twitterConfig.Accounts = append(twitterConfig.Accounts[:index], twitterConfig.Accounts[index+1:]...)
+		// Remove from live feeds
+		if !deleteFeed(name, feedTwitterAccount) {
+			return errors.New("failed to delete from live feeds")
+		}
+		return nil
+	}
+	return errors.New("twitter account config does not exist")
 }

@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type feedDestination struct {
@@ -62,7 +66,7 @@ func getFeedTypeName(moduleType int) string {
 	return ""
 }
 
-func indexFeeds() {
+func catalogFeeds() {
 	//feeds = make([]moduleFeed, 0)
 	// RSS Feeds
 	for _, feed := range rssConfig.Feeds {
@@ -168,4 +172,36 @@ func deleteFeed(name string, group int) bool {
 		}
 	}
 	return false
+}
+
+func saveModuleConfig(feedType int) error {
+	switch feedType {
+	case feedInstagramAccount:
+		return saveConfig(pathConfigModuleInstagram, instagramConfig)
+	case feedRSS:
+		return saveConfig(pathConfigModuleRSS, rssConfig)
+	case feedTwitterAccount:
+		return saveConfig(pathConfigModuleTwitter, twitterConfig)
+	}
+	return nil
+}
+
+func replyConfig(jsonFeed interface{}, reply string, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	var jsonn []byte
+	var err error
+	if jsonn, err = json.MarshalIndent(jsonFeed, "", "\t"); err == nil {
+		reply += fmt.Sprintf("\n```json\n%s```", jsonn)
+	} else {
+		return err
+	}
+	InteractionRespond(reply, s, i)
+	return nil
+}
+
+func saveModuleConfigReply(moduleGroup int, jsonFeed interface{}, reply string, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	if err := saveModuleConfig(moduleGroup); err != nil { // save config
+		return fmt.Errorf("error saving config: %s", err.Error())
+	} else {
+		return replyConfig(jsonFeed, reply, s, i)
+	}
 }

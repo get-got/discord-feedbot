@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -14,7 +13,7 @@ import (
 )
 
 var (
-	nameCommand = []*discordgo.ApplicationCommandOption{
+	nameCommandOpt = []*discordgo.ApplicationCommandOption{
 		{
 			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        "name",
@@ -23,7 +22,7 @@ var (
 		},
 	}
 
-	genericModuleCommands = []*discordgo.ApplicationCommandOption{
+	genericCommandOpts = []*discordgo.ApplicationCommandOption{
 		{
 			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        "name",
@@ -44,12 +43,6 @@ var (
 		},
 		{
 			Type:        discordgo.ApplicationCommandOptionString,
-			Name:        "twitter",
-			Description: "Twitter for Username & Avatar",
-			Required:    false,
-		},
-		{
-			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        "username",
 			Description: "Webhook Username",
 			Required:    false,
@@ -58,6 +51,12 @@ var (
 			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        "avatar",
 			Description: "Webhook Avatar Image URL",
+			Required:    false,
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "color",
+			Description: "Webhook Embed Color",
 			Required:    false,
 		},
 		{
@@ -85,6 +84,59 @@ var (
 				{
 					Name:  "White then Black",
 					Value: "wb",
+				},
+			},
+		},
+	}
+
+	twitterOpts = []*discordgo.ApplicationCommandOption{
+		{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "change-handle",
+			Description: "Change Twitter Handle (@)",
+			Required:    false,
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionBoolean,
+			Name:        "exclude-replies",
+			Description: "Exclude Replies",
+			Required:    false,
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionBoolean,
+			Name:        "include-retweets",
+			Description: "Include Retweets",
+			Required:    false,
+		},
+		{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "filter-type",
+			Description: "Filter Type",
+			Required:    false,
+			Choices: []*discordgo.ApplicationCommandOptionChoice{
+				{
+					Name:  "ALL",
+					Value: "all",
+				},
+				{
+					Name:  "Media Only",
+					Value: "media",
+				},
+				{
+					Name:  "Text Only",
+					Value: "text",
+				},
+				{
+					Name:  "Images Only",
+					Value: "image",
+				},
+				{
+					Name:  "Videos Only",
+					Value: "video",
+				},
+				{
+					Name:  "Links Only",
+					Value: "link",
 				},
 			},
 		},
@@ -146,22 +198,29 @@ var (
 		{
 			Name:        "rss-new",
 			Description: "Add a new feed",
-			Options: append([]*discordgo.ApplicationCommandOption{{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "url",
-				Description: "RSS Feed URL",
-				Required:    true,
-			}}, genericModuleCommands...),
+			Options: append([]*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "url",
+					Description: "RSS Feed URL",
+					Required:    true,
+				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "twitter",
+					Description: "Twitter for Username & Avatar",
+					Required:    false,
+				}}, genericCommandOpts...),
 		},
 		{
 			Name:        "rss-add",
 			Description: "Add this channel to an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		{
 			Name:        "rss-modify",
 			Description: "Modify an existing feed",
-			Options: append(genericModuleCommands, []*discordgo.ApplicationCommandOption{
+			Options: append(genericCommandOpts, []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
 					Name:        "change-url",
@@ -174,17 +233,23 @@ var (
 					Description: "Add Blacklist Line (sep by \"|\") for URL contents",
 					Required:    false,
 				},
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "twitter",
+					Description: "Twitter for Username & Avatar",
+					Required:    false,
+				},
 			}...),
 		},
 		{
 			Name:        "rss-delete",
 			Description: "Delete an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		{
 			Name:        "rss-show",
 			Description: "Display info for an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		//#endregion
 
@@ -192,39 +257,32 @@ var (
 		{
 			Name:        "twitter-new",
 			Description: "Add a new feed",
-			Options: append([]*discordgo.ApplicationCommandOption{{
+			Options: append(append([]*discordgo.ApplicationCommandOption{{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "handle",
 				Description: "Twitter Handle (@)",
 				Required:    true,
-			}}, genericModuleCommands...),
+			}}, genericCommandOpts...), twitterOpts...),
 		},
 		{
 			Name:        "twitter-add",
 			Description: "Add this channel to an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		{
 			Name:        "twitter-modify",
 			Description: "Modify an existing feed",
-			Options: append(genericModuleCommands, []*discordgo.ApplicationCommandOption{
-				{
-					Type:        discordgo.ApplicationCommandOptionString,
-					Name:        "change-handle",
-					Description: "Change Twitter Handle (@)",
-					Required:    false,
-				},
-			}...),
+			Options:     append(genericCommandOpts, twitterOpts...),
 		},
 		{
 			Name:        "twitter-delete",
 			Description: "Delete an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		{
 			Name:        "twitter-show",
 			Description: "Display info for an existing feed",
-			Options:     nameCommand,
+			Options:     nameCommandOpt,
 		},
 		//#endregion
 
@@ -408,40 +466,20 @@ var (
 			}
 		},
 		"instagram-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{Content: "wip"},
-			})
+			//TODO: everything
+			InteractionRespond("wip", s, i)
 		},
 		"instagram-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			authorUser := getAuthor(i)
-			if authorUser == nil {
-				return
-			}
-			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
-			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-				//TODO: everything
-			}
+			//TODO: everything
+			InteractionRespond("wip", s, i)
 		},
 		"instagram-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			//TODO: everything
+			InteractionRespond("wip", s, i)
 		},
 		"instagram-show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{Content: "wip"},
-			})
+			//TODO: everything
+			InteractionRespond("wip", s, i)
 		},
 		//#endregion
 
@@ -452,17 +490,9 @@ var (
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
+				optionMap := interactionOptMap(i)
 				// New Feed
 				var newFeed configModuleRssFeed
 				newFeed.Destinations = []feedDestination{{Channel: i.ChannelID}}
@@ -474,94 +504,30 @@ var (
 				}
 				// Identifiers are empty
 				if newFeed.Name == "" || newFeed.URL == "" {
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "Config name or feed identifier was empty... Try again!"},
-					})
+					InteractionRespond("Config name or feed identifier was empty... Try again!", s, i)
 					return
 				}
 				// Doesn't exist
 				if existsRssConfig(newFeed.Name) {
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "RSS Feed already exists with that name..."},
-					})
+					InteractionRespond("RSS Feed already exists with that name...", s, i)
 					return
 				}
-				// Optional Vars
-				if opt, ok := optionMap["tag"]; ok {
-					tagged := opt.UserValue(s)
-					if tagged != nil {
-						destClone := newFeed.Destinations
-						for key, destination := range destClone {
-							if destination.Channel == i.ChannelID {
-								newFeed.Destinations[key].Tags = []string{tagged.ID}
-							}
-						}
-					}
-				}
-				if opt, ok := optionMap["wait"]; ok {
-					val := int(opt.IntValue())
-					newFeed.WaitMins = &val
-				}
-				if opt, ok := optionMap["avatar"]; ok {
-					val := opt.StringValue()
-					newFeed.Avatar = &val
-				}
-				if opt, ok := optionMap["username"]; ok {
-					val := opt.StringValue()
-					newFeed.Username = &val
-				}
-				if opt, ok := optionMap["twitter"]; ok {
-					//TODO: better error checks
-					if twitterClient != nil {
-						handle := opt.StringValue()
-						userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-						if err != nil {
-							if len(userResults) > 0 {
-								userResult := userResults[0]
-								newFeed.UseTwitter = &userResult.IdStr
-							}
-						}
-					}
-				}
-				// Optional Vars -Lists
-				if opt, ok := optionMap["blacklist"]; ok {
-					var list []string
-					list = append(list, strings.Split(opt.StringValue(), "|")...)
-					newFeed.Blacklist = append(newFeed.Blacklist, list)
-				}
-				if opt, ok := optionMap["whitelist"]; ok {
-					var list []string
-					list = append(list, strings.Split(opt.StringValue(), "|")...)
-					newFeed.Whitelist = append(newFeed.Whitelist, list)
-				}
-				if opt, ok := optionMap["list-type"]; ok {
-					newFeed.ListType = opt.StringValue()
-				}
+
+				// Handle Options
+				handleRssCmdOpts(&newFeed, optionMap, s, i)
 
 				// Finalize
-				feedIndex := len(rssConfig.Feeds)                  // cache index for new routine
 				rssConfig.Feeds = append(rssConfig.Feeds, newFeed) // add new feed to config
-				if err := saveModuleConfig(feedRSS); err != nil {  // save config
-					log.Println(color.HiRedString("error saving config")) //TODO:
-				} else { // success
-					reply := "Added new RSS Feed! Saved to config..."
-					json, err := json.MarshalIndent(newFeed, "", "\t")
-					if err == nil {
-						reply += fmt.Sprintf("\n```json\n%s```", json)
-					}
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: reply},
-					})
+				if err := saveModuleConfigReply(feedRSS, newFeed, "Added new RSS feed! Saved to config...", s, i); err != nil {
+					log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedRSS)))
 				}
 
-				// Start routine for new feed
+				// Start new feed
 				waitMins := rssConfig.WaitMins
 				if newFeed.WaitMins != nil {
 					waitMins = *newFeed.WaitMins
 				}
+				feedIndex := len(feeds)
 				feeds = append(feeds, feedThread{
 					Group:    feedRSS,
 					Name:     newFeed.Name,
@@ -578,25 +544,14 @@ var (
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
+				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; ok {
 					name := opt.StringValue()
 
 					if !existsRssConfig(name) {
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: "No RSS Feed exists with that name..."},
-						})
+						InteractionRespond("No RSS Feed exists with that name...", s, i)
 						return
 					} else {
 						config := getRssConfig(name) // point to it so it modifies source
@@ -604,18 +559,8 @@ var (
 
 						// Save
 						updateRssConfig(config.Name, *config)
-						if err := saveModuleConfig(feedRSS); err != nil {
-							log.Println(color.HiRedString("error saving config")) //TODO:
-						} else { // success
-							reply := "Modified RSS Feed! Saved to config..."
-							json, err := json.MarshalIndent(config, "", "\t")
-							if err == nil {
-								reply += fmt.Sprintf("\n```json\n%s```", json)
-							}
-							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-								Type: discordgo.InteractionResponseChannelMessageWithSource,
-								Data: &discordgo.InteractionResponseData{Content: reply},
-							})
+						if err := saveModuleConfigReply(feedRSS, *config, "Modified RSS Feed! Saved to config...", s, i); err != nil {
+							log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedRSS)))
 						}
 						// Update Live
 						if !updateFeedConfig(config.Name, feedRSS, *config) {
@@ -631,127 +576,27 @@ var (
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
+				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; !ok {
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "Config name identifier is empty... Try again!"},
-					})
+					InteractionRespond("Config name identifier is empty... Try again!", s, i)
 					return
 				} else {
 					feedName := opt.StringValue()
 					if !existsRssConfig(feedName) {
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: "No feed config exists with that name..."},
-						})
+						InteractionRespond("No feed config exists with that name...", s, i)
 						return
 					} else {
 						config := getRssConfig(feedName) // point to it so it modifies source
 
-						// Optional Vars
-						if opt, ok := optionMap["change-url"]; ok {
-							config.URL = opt.StringValue()
-						}
-						if opt, ok := optionMap["tag"]; ok {
-							tagged := opt.UserValue(s)
-							if tagged != nil {
-								destClone := config.Destinations
-								for key, destination := range destClone {
-									if destination.Channel == i.ChannelID {
-										config.Destinations[key].Tags = append(config.Destinations[key].Tags, tagged.ID)
-									}
-								}
-							}
-						}
-						if opt, ok := optionMap["wait"]; ok {
-							v := int(opt.IntValue())
-							config.WaitMins = &v
-						}
-						if opt, ok := optionMap["avatar"]; ok {
-							v := opt.StringValue()
-							config.Avatar = &v
-						}
-						if opt, ok := optionMap["username"]; ok {
-							v := opt.StringValue()
-							config.Username = &v
-						}
-						if opt, ok := optionMap["twitter"]; ok {
-							if twitterClient == nil {
-								//TODO: log
-								s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-									Type: discordgo.InteractionResponseChannelMessageWithSource,
-									Data: &discordgo.InteractionResponseData{Content: "Twitter Client is not connected..."},
-								})
-								return
-							} else {
-								handle := opt.StringValue()
-								userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-								if err == nil {
-									//TODO: log
-									s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-										Type: discordgo.InteractionResponseChannelMessageWithSource,
-										Data: &discordgo.InteractionResponseData{Content: "ERROR FETCHING USERS..."},
-									})
-									return
-								} else {
-									if len(userResults) > 0 {
-										config.UseTwitter = &userResults[0].IdStr
-									} else {
-										//TODO: log
-										s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-											Type: discordgo.InteractionResponseChannelMessageWithSource,
-											Data: &discordgo.InteractionResponseData{Content: "No Twitter users found for this handle..."},
-										})
-										return
-									}
-								}
-							}
-						}
-						// Optional Vars -Lists
-						if opt, ok := optionMap["blacklist"]; ok {
-							var list []string
-							list = append(list, strings.Split(opt.StringValue(), "|")...)
-							config.Blacklist = append(config.Blacklist, list)
-						}
-						if opt, ok := optionMap["whitelist"]; ok {
-							var list []string
-							list = append(list, strings.Split(opt.StringValue(), "|")...)
-							config.Whitelist = append(config.Whitelist, list)
-						}
-						if opt, ok := optionMap["list-type"]; ok {
-							config.ListType = opt.StringValue()
-						}
-						if opt, ok := optionMap["blacklist-url"]; ok {
-							var list []string
-							list = append(list, strings.Split(opt.StringValue(), "|")...)
-							config.BlacklistURL = append(config.BlacklistURL, list)
-						}
+						// Handle Options
+						handleRssCmdOpts(config, optionMap, s, i)
 
 						// Save
 						updateRssConfig(config.Name, *config)
-						if err := saveModuleConfig(feedRSS); err != nil {
-							log.Println(color.HiRedString("error saving config")) //TODO:
-						} else { // success
-							reply := "Modified RSS Feed! Saved to config..."
-							json, err := json.MarshalIndent(config, "", "\t")
-							if err == nil {
-								reply += fmt.Sprintf("\n```json\n%s```", json)
-							}
-							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-								Type: discordgo.InteractionResponseChannelMessageWithSource,
-								Data: &discordgo.InteractionResponseData{Content: reply},
-							})
+						if err := saveModuleConfigReply(feedRSS, *config, "Modified RSS Feed! Saved to config...", s, i); err != nil {
+							log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedRSS)))
 						}
 						// Update Live
 						if !updateFeedConfig(config.Name, feedRSS, *config) {
@@ -767,52 +612,24 @@ var (
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
+				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; ok {
 					name := opt.StringValue()
-
 					if !existsRssConfig(name) {
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: "No RSS Feed exists with that name..."},
-						})
+						InteractionRespond("No RSS Feed exists with that name...", s, i)
 						return
 					} else {
-						deletedConfig := deleteRssConfig(name)
-						if deletedConfig {
-							log.Println("deleted config")
-						} else {
-							log.Println("FAILED TO DELETE CONFIG")
+						if err := deleteRssConfig(name); err != nil {
+							InteractionRespond("Error deleting feed: "+err.Error(), s, i)
+							return
 						}
-						deletedFeed := deleteFeed(name, feedRSS)
-						if deletedFeed {
-							log.Println("deleted feed")
-						} else {
-							log.Println("FAILED TO DELETE FEED")
-						}
-
 						// Save
 						if err := saveModuleConfig(feedRSS); err != nil {
-							log.Println(color.HiRedString("error saving config")) //TODO:
-							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-								Type: discordgo.InteractionResponseChannelMessageWithSource,
-								Data: &discordgo.InteractionResponseData{Content: "error saving config"},
-							})
-						} else { // success
-							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-								Type: discordgo.InteractionResponseChannelMessageWithSource,
-								Data: &discordgo.InteractionResponseData{Content: "deleted?"},
-							})
+							InteractionRespond("Error saving RSS config: "+err.Error(), s, i)
+						} else {
+							InteractionRespond("Successfully deleted feed!", s, i)
 						}
 					}
 				}
@@ -824,45 +641,25 @@ var (
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
+				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; ok {
 					name := opt.StringValue()
-
 					if !existsRssConfig(name) {
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: "No RSS Feed exists with that name..."},
-						})
+						InteractionRespond("No RSS Feed exists with that name...", s, i)
 						return
 					} else {
 						feed := getModuleFeed(name, feedRSS)
-
 						reply := fmt.Sprintf("**RSS Feed: %s**", feed.Name)
 						reply += fmt.Sprintf("\n_Ran %s, runs every %d minutes, ran %d time%s since launch_",
 							humanize.Time(feed.LastRan), feed.WaitMins, feed.TimesRan, ssuff(feed.TimesRan))
-
 						config := getRssConfig(name)
-						// Append Config
-						json, err := json.MarshalIndent(config, "", "\t")
-						if err == nil {
-							reply += fmt.Sprintf("\n```json\n%s```", json)
+						if err := replyConfig(*config, reply, s, i); err != nil {
+							log.Println(color.HiRedString("Error replying: %s", err.Error()))
 						}
-
 						// Send
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: reply},
-						})
+						InteractionRespond(reply, s, i)
 					}
 				}
 			}
@@ -873,42 +670,26 @@ var (
 		"twitter-new": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			authorUser := getAuthor(i)
 			if authorUser == nil {
-				//TODO: log
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				//TODO: log
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
-				return
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
-				}
-
-				var newFeed configModuleTwitterAccount
-				newFeed.Destinations = []string{i.ChannelID}
+				optionMap := interactionOptMap(i)
+				// New Feed
+				var newFeed configModuleTwitterAcc
+				newFeed.Destinations = []feedDestination{{Channel: i.ChannelID}}
 				if opt, ok := optionMap["handle"]; ok {
 					if twitterClient == nil {
 						//TODO: log
-						s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-							Type: discordgo.InteractionResponseChannelMessageWithSource,
-							Data: &discordgo.InteractionResponseData{Content: "Twitter Client is not connected..."},
-						})
+						InteractionRespond("Twitter Client is not connected...", s, i)
 						return
 					} else {
 						handle := opt.StringValue()
 						userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
 						if err == nil {
 							//TODO: log
-							s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-								Type: discordgo.InteractionResponseChannelMessageWithSource,
-								Data: &discordgo.InteractionResponseData{Content: "ERROR FETCHING USERS..."},
-							})
+							InteractionRespond("ERROR FETCHING USERS... "+err.Error(), s, i)
 							return
 						} else {
 							if len(userResults) > 0 {
@@ -916,10 +697,7 @@ var (
 								newFeed.ID = userResult.IdStr
 							} else {
 								//TODO: log
-								s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-									Type: discordgo.InteractionResponseChannelMessageWithSource,
-									Data: &discordgo.InteractionResponseData{Content: "No Twitter users found for this handle..."},
-								})
+								InteractionRespond("No Twitter users found for this handle...", s, i)
 								return
 							}
 						}
@@ -928,52 +706,32 @@ var (
 				if opt, ok := optionMap["name"]; ok {
 					newFeed.Name = opt.StringValue()
 				}
-				// Doesn't exist
-				if existsTwitterConfig(newFeed.Name) {
-					//TODO: log
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "Twitter Account already exists with that name..."},
-					})
-					return
-				}
+				// Identifiers are empty
 				if newFeed.Name == "" || newFeed.ID == "" {
-					//TODO: log
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "Config name or feed identifier was empty... Try again!"},
-					})
+					InteractionRespond("Config name or feed identifier was empty... Try again!", s, i)
 					return
 				}
-				if opt, ok := optionMap["wait"]; ok {
-					val := int(opt.IntValue())
-					newFeed.WaitMins = &val
+				// Doesn't exist
+				if existsTwitterAccConfig(newFeed.Name) {
+					InteractionRespond("Twitter Account already exists with that name...", s, i)
+					return
 				}
 
-				feedIndex := len(twitterConfig.Accounts) // cache index for new routine
-				twitterConfig.Accounts = append(twitterConfig.Accounts, newFeed)
+				// Handle Options
+				handleTwitterAccCmdOpts(&newFeed, optionMap, s, i)
 
-				err := saveModuleConfig(feedTwitterAccount)
-				if err != nil {
-					//TODO: log log
-					log.Println(color.HiRedString("error saving config"))
-				} else {
-					reply := "Added new Twitter Account! Saved to config..."
-					json, err := json.MarshalIndent(newFeed, "", "\t")
-					if err == nil {
-						reply += fmt.Sprintf("\n```json\n%s```", json)
-					}
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: reply},
-					})
+				// Finalize
+				twitterConfig.Accounts = append(twitterConfig.Accounts, newFeed) // add new feed to config
+				if err := saveModuleConfigReply(feedTwitterAccount, newFeed, "Added new Twitter Account! Saved to config...", s, i); err != nil {
+					log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedTwitterAccount)))
 				}
 
+				// Start new feed
 				waitMins := twitterConfig.WaitMins
 				if newFeed.WaitMins != nil {
 					waitMins = *newFeed.WaitMins
 				}
-
+				feedIndex := len(feeds)
 				feeds = append(feeds, feedThread{
 					Group:    feedTwitterAccount,
 					Name:     newFeed.Name,
@@ -985,58 +743,130 @@ var (
 			}
 		},
 		"twitter-add": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{Content: "wip"},
-			})
-		},
-		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//TODO: everything
 			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
+				optionMap := interactionOptMap(i)
+				if opt, ok := optionMap["name"]; ok {
+					name := opt.StringValue()
+
+					if !existsTwitterAccConfig(name) {
+						InteractionRespond("No Twitter Account exists with that name...", s, i)
+						return
+					} else {
+						config := getTwitterAccConfig(name) // point to it so it modifies source
+						config.Destinations = append(config.Destinations, feedDestination{Channel: i.ChannelID})
+
+						// Save
+						updateTwitterAccConfig(config.Name, *config)
+						if err := saveModuleConfigReply(feedTwitterAccount, *config, "Modified Twitter Account! Saved to config...", s, i); err != nil {
+							log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedTwitterAccount)))
+						}
+						// Update Live
+						if !updateFeedConfig(config.Name, feedTwitterAccount, *config) {
+							log.Println(color.HiRedString("failed to update feed %s/%s...", getFeedTypeName(feedTwitterAccount), config.Name))
+						}
+					}
 				}
-				//TODO: everything
+			}
+		},
+		"twitter-modify": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			authorUser := getAuthor(i)
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				InteractionRespond(commandNotAdmin, s, i)
+			} else {
+				optionMap := interactionOptMap(i)
+				if opt, ok := optionMap["name"]; !ok {
+					InteractionRespond("Config name identifier is empty... Try again!", s, i)
+					return
+				} else {
+					feedName := opt.StringValue()
+					if !existsTwitterAccConfig(feedName) {
+						InteractionRespond("No feed config exists with that name...", s, i)
+						return
+					} else {
+						config := getTwitterAccConfig(feedName) // point to it so it modifies source
+
+						// Handle Options
+						handleTwitterAccCmdOpts(config, optionMap, s, i)
+
+						// Save
+						updateTwitterAccConfig(config.Name, *config)
+						if err := saveModuleConfigReply(feedTwitterAccount, *config, "Modified Twitter Account! Saved to config...", s, i); err != nil {
+							log.Println(color.HiRedString("failed to save config for %s...", getFeedTypeName(feedTwitterAccount)))
+						}
+						// Update Live
+						if !updateFeedConfig(config.Name, feedTwitterAccount, *config) {
+							log.Println(color.HiRedString("failed to update feed %s/%s...", getFeedTypeName(feedTwitterAccount), config.Name))
+						}
+					}
+				}
 			}
 		},
 		"twitter-delete": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//TODO: everything
 			authorUser := getAuthor(i)
 			if authorUser == nil {
 				return
 			}
 			if !isBotAdmin(authorUser.ID) {
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: commandNotAdmin},
-				})
+				InteractionRespond(commandNotAdmin, s, i)
 			} else {
-				options := i.ApplicationCommandData().Options
-				optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
-				for _, opt := range options {
-					optionMap[opt.Name] = opt
+				optionMap := interactionOptMap(i)
+				if opt, ok := optionMap["name"]; ok {
+					name := opt.StringValue()
+					if !existsRssConfig(name) {
+						InteractionRespond("No Twitter Account exists with that name...", s, i)
+						return
+					} else {
+						if err := deleteTwitterAccConfig(name); err != nil {
+							InteractionRespond("Error deleting feed: "+err.Error(), s, i)
+							return
+						}
+						// Save
+						if err := saveModuleConfig(feedTwitterAccount); err != nil {
+							InteractionRespond("Error saving Twitter Account config: "+err.Error(), s, i)
+						} else {
+							InteractionRespond("Successfully deleted feed!", s, i)
+						}
+					}
 				}
-				//TODO: everything
 			}
 		},
 		"twitter-show": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			//
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{Content: "wip"},
-			})
+			authorUser := getAuthor(i)
+			if authorUser == nil {
+				return
+			}
+			if !isBotAdmin(authorUser.ID) {
+				InteractionRespond(commandNotAdmin, s, i)
+			} else {
+				optionMap := interactionOptMap(i)
+				if opt, ok := optionMap["name"]; ok {
+					name := opt.StringValue()
+					if !existsRssConfig(name) {
+						InteractionRespond("No Twitter Account exists with that name...", s, i)
+						return
+					} else {
+						feed := getModuleFeed(name, feedTwitterAccount)
+						reply := fmt.Sprintf("**Twitter Account: %s**", feed.Name)
+						reply += fmt.Sprintf("\n_Ran %s, runs every %d minutes, ran %d time%s since launch_",
+							humanize.Time(feed.LastRan), feed.WaitMins, feed.TimesRan, ssuff(feed.TimesRan))
+						config := getTwitterAccConfig(name)
+						if err := replyConfig(*config, reply, s, i); err != nil {
+							log.Println(color.HiRedString("Error replying: %s", err.Error()))
+						}
+						// Send
+						InteractionRespond(reply, s, i)
+					}
+				}
+			}
 		},
 		//#endregion
 
@@ -1070,14 +900,19 @@ func deleteSlashCommands() {
 	log.Println(color.HiCyanString("Slash commands deleted!"))
 }
 
-func saveModuleConfig(feedType int) error {
-	switch feedType {
-	case feedInstagramAccount:
-		return saveConfig(pathConfigModuleInstagram, instagramConfig)
-	case feedRSS:
-		return saveConfig(pathConfigModuleRSS, rssConfig)
-	case feedTwitterAccount:
-		return saveConfig(pathConfigModuleTwitter, twitterConfig)
+func interactionOptMap(i *discordgo.InteractionCreate) map[string]*discordgo.ApplicationCommandInteractionDataOption {
+	options := i.ApplicationCommandData().Options
+	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+	for _, opt := range options {
+		optionMap[opt.Name] = opt
 	}
+	return optionMap
+}
+
+func InteractionRespond(content string, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{Content: content},
+	})
 	return nil
 }

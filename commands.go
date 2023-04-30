@@ -819,7 +819,7 @@ var (
 				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; ok {
 					name := opt.StringValue()
-					if !existsRssConfig(name) {
+					if !existsTwitterAccConfig(name) {
 						InteractionRespond("No Twitter Account exists with that name...", s, i)
 						return
 					} else {
@@ -848,7 +848,7 @@ var (
 				optionMap := interactionOptMap(i)
 				if opt, ok := optionMap["name"]; ok {
 					name := opt.StringValue()
-					if !existsRssConfig(name) {
+					if !existsTwitterAccConfig(name) {
 						InteractionRespond("No Twitter Account exists with that name...", s, i)
 						return
 					} else {

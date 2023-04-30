@@ -134,7 +134,7 @@ var (
 		},
 		{
 			Name:        "rss-modify",
-			Description: "<FUNCTIONING> Modify an existing feed.",
+			Description: "Modify an existing feed",
 			Options: append(genericModuleCommands, []*discordgo.ApplicationCommandOption{
 				{
 					Type:        discordgo.ApplicationCommandOptionString,
@@ -237,11 +237,10 @@ var (
 			}
 		},
 		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := projectName + " " + projectVersion
-			output += "\ndiscordgo v" + discordgo.VERSION
-			output += "\nDiscord API v" + discordgo.APIVersion
-			output += "\nTwitter API v1.1"
-			output += "\nInstagram API vX"
+			output := "**" + projectName + " " + projectVersion + "**"
+			output += "\n• discordgo v" + discordgo.VERSION + " with Discord API v" + discordgo.APIVersion
+			output += "\n• Twitter API v1.1"
+			output += "\n_Launched " + humanize.Time(timeLaunched) + "_"
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
@@ -254,17 +253,12 @@ var (
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{Content: "wip"},
 			})
-			/*json, _ := json.MarshalIndent(moduleFeed.moduleConfig, "", "\t")
-			output += fmt.Sprintf("\n• **%s #%d** \t\t_Last ran %s < %d time%s, every %d minute%s >_\n```json\n%s```",
-				getFeedTypeName(moduleFeed.moduleType), moduleFeed.moduleSlot+1,
-				humanize.Time(moduleFeed.lastRan), moduleFeed.timesRan, ssuff(moduleFeed.timesRan),
-				waitMins, ssuff(waitMins), json,
-			)*/
+			//TODO: everything
 		},
 		"feeds": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			output := ""
 			for _, moduleFeed := range feeds {
-				output += fmt.Sprintf("\n• **%s #X** \"%s\" \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+				output += fmt.Sprintf("\n• %s: `%s` \t\t_Last ran %s < %d time%s, every %d minute%s >_",
 					getFeedTypeName(moduleFeed.Group), moduleFeed.Name,
 					humanize.Time(moduleFeed.LastRan), moduleFeed.TimesRan, ssuff(moduleFeed.TimesRan),
 					moduleFeed.WaitMins, ssuff(moduleFeed.WaitMins),
@@ -799,7 +793,7 @@ var (
 					} else {
 						feed := getModuleFeed(name, feedRSS)
 
-						reply := fmt.Sprintf("**RSS Feed #X: %s**", feed.Name)
+						reply := fmt.Sprintf("**RSS Feed: %s**", feed.Name)
 						reply += fmt.Sprintf("\n_Ran %s, runs every %d minutes, ran %d time%s since launch_",
 							humanize.Time(feed.LastRan), feed.WaitMins, feed.TimesRan, ssuff(feed.TimesRan))
 

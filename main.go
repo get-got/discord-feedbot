@@ -90,35 +90,31 @@ func main() {
 	for k := range feedsClone {
 		go startFeed(&feeds[k])
 	}
-	for {
-		select {
-		case instagramAccount_Triggered := <-instagramAccount_Channel:
-			{
-				feed := instagramAccount_Triggered
-				log.Println(color.HiMagentaString("instagram %s fired", feed.Name))
-				if err := handleInstagramAccount(feed.Config.(configModuleInstagramAccount)); err != nil {
-					log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+	go func() {
+		for {
+			select {
+			case instagramAccount_Triggered := <-instagramAccount_Channel:
+				{
+					if err := handleInstagramAccount(instagramAccount_Triggered.Config.(configModuleInstagramAccount)); err != nil {
+						log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+					}
+				}
+			case rssFeed_Triggered := <-rssFeed_Channel:
+				{
+					if err := handleRssFeed(rssFeed_Triggered.Config.(configModuleRssFeed)); err != nil {
+						log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+					}
+				}
+			case twitterAccount_Triggered := <-twitterAccount_Channel:
+				{
+					if err := handleTwitterAccount(twitterAccount_Triggered.Config.(configModuleTwitterAccount)); err != nil {
+						log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+					}
 				}
 			}
-		case rssFeed_Triggered := <-rssFeed_Channel:
-			{
-				feed := rssFeed_Triggered
-				log.Println(color.HiMagentaString("rss %s fired", feed.Name))
-				if err := handleRssFeed(feed.Config.(configModuleRssFeed)); err != nil {
-					log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
-				}
-			}
-		case twitterAccount_Triggered := <-twitterAccount_Channel:
-			{
-				feed := twitterAccount_Triggered
-				log.Println(color.HiMagentaString("twitter %s fired", feed.Name))
-				if err := handleTwitterAccount(feed.Config.(configModuleTwitterAccount)); err != nil {
-					log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
-				}
-			}
+			time.Sleep(50 * time.Millisecond) // don't wanna loop infinitely with no delay
 		}
-		time.Sleep(50 * time.Millisecond) // don't wanna loop infinitely with no delay
-	}
+	}()
 
 	// Infinite loop until interrupted
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)

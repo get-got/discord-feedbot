@@ -685,7 +685,7 @@ var (
 					} else {
 						handle := opt.StringValue()
 						userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-						if err == nil {
+						if err != nil {
 							//TODO: log
 							InteractionRespond("ERROR FETCHING USERS... "+err.Error(), s, i)
 							return

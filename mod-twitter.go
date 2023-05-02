@@ -414,7 +414,7 @@ func handleTwitterAccCmdOpts(config *configModuleTwitterAcc,
 		} else {
 			handle := opt.StringValue()
 			userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-			if err == nil {
+			if err != nil {
 				return errors.New("error fetching users: " + err.Error())
 			} else {
 				if len(userResults) > 0 {

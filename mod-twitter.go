@@ -28,10 +28,8 @@ var (
 )
 
 type configModuleTwitter struct {
-	Tags []string `json:"tags,omitempty"`
-
 	WaitMins int `json:"waitMins,omitempty"`
-	DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
+	//DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
 	Accounts []configModuleTwitterAcc `json:"accounts"`
 }
@@ -41,7 +39,6 @@ type configModuleTwitterAcc struct {
 	Name         string            `json:"name"`
 	ID           string            `json:"id"`
 	Destinations []feedDestination `json:"destinations"`
-	Tags         []string          `json:"tags,omitempty"`
 
 	WaitMins *int `json:"waitMins,omitempty"`
 	//DayLimit *int `json:"dayLimit,omitempty"` // X days = too old, ignored
@@ -51,14 +48,16 @@ type configModuleTwitterAcc struct {
 	MaskAvatar   *string `json:"maskAvatar,omitempty"`
 	MaskColor    *string `json:"maskColor,omitempty"`
 
+	// GENERIC RULES
+	Blacklist [][]string `json:"blacklist"`
+	Whitelist [][]string `json:"whitelist"`
+	ListType  string     `json:"listType,omitempty"`
+	// + LIST RULES
+	BlacklistRetweets []string `json:"blacklistRetweetsFrom"` //TODO: command control
 	// RULES
-	ExcludeReplies    *bool      `json:"excludeReplies,omitempty"`
-	IncludeRetweets   *bool      `json:"includeRetweets,omitempty"`
-	FilterType        string     `json:"filterType,omitempty"`
-	Blacklist         [][]string `json:"blacklist"`
-	Whitelist         [][]string `json:"whitelist"`
-	ListType          string     `json:"listType,omitempty"`
-	BlacklistRetweets []string   `json:"blacklistRetweetsFrom"` //TODO: command control
+	ExcludeReplies  *bool  `json:"excludeReplies,omitempty"`
+	IncludeRetweets *bool  `json:"includeRetweets,omitempty"`
+	FilterType      string `json:"filterType,omitempty"`
 }
 
 func loadConfig_Module_Twitter() error {

@@ -24,9 +24,10 @@ var (
 )
 
 type configModuleRSS struct {
-	WaitMins int                   `json:"waitMins,omitempty"`
-	DayLimit int                   `json:"dayLimit,omitempty"` // X days = too old, ignored
-	Feeds    []configModuleRssFeed `json:"feeds"`
+	WaitMins int `json:"waitMins,omitempty"`
+	DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
+
+	Feeds []configModuleRssFeed `json:"feeds"`
 }
 
 type configModuleRssFeed struct {
@@ -34,7 +35,8 @@ type configModuleRssFeed struct {
 	Name         string            `json:"name"`
 	URL          string            `json:"url"`
 	Destinations []feedDestination `json:"destinations"`
-	WaitMins     *int              `json:"waitMins,omitempty"`
+
+	WaitMins *int `json:"waitMins,omitempty"`
 	//IgnoreDate   *bool    `json:"ignoreDate,omitempty"`
 	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
@@ -43,12 +45,15 @@ type configModuleRssFeed struct {
 	Avatar     *string `json:"avatar,omitempty"`
 	UseTwitter *string `json:"useTwitter,omitempty"`
 
-	// RULES
-	Blacklist    [][]string `json:"blacklist,omitempty"`
+	// GENERIC RULES
+	Blacklist [][]string `json:"blacklist,omitempty"`
+	Whitelist [][]string `json:"whitelist,omitempty"`
+	ListType  string     `json:"listType,omitempty"`
+	// + LIST RULES
 	BlacklistURL [][]string `json:"blacklistURL,omitempty"`
-	Whitelist    [][]string `json:"whitelist,omitempty"`
-	ListType     string     `json:"listType,omitempty"`
 	//BlacklistDomains [][]string `json:"blacklistDomains,omitempty"`
+	// RULES
+	//.
 }
 
 func loadConfig_Module_RSS() error {

@@ -144,10 +144,8 @@ func loadConfig_Modules_Credentials() error {
 			spotifyClientID = config.Section("").Key("spotify_client_id").String()
 			spotifyClientSecret = config.Section("").Key("spotify_client_secret").String()
 
-			twitterAccessToken = config.Section("").Key("twitter_access_token").String()
-			twitterAccessSecret = config.Section("").Key("twitter_access_secret").String()
-			twitterConsumerKey = config.Section("").Key("twitter_consumer_key").String()
-			twitterConsumerSecret = config.Section("").Key("twitter_consumer_secret").String()
+			twitterUsername = config.Section("").Key("twitter_username").String()
+			twitterPassword = config.Section("").Key("twitter_password").String()
 		}
 	} else {
 		return fmt.Errorf("module credentials file not found: %s", err)

@@ -108,7 +108,7 @@ func catalogFeeds() {
 		feeds = append(feeds, feedThread{
 			Group:    feedTwitterAccount,
 			Name:     account.Name,
-			Ref:      account.ID,
+			Ref:      account.Handle,
 			Config:   account,
 			WaitMins: waitMins,
 		})

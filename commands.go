@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -677,7 +676,8 @@ var (
 				// New Feed
 				var newFeed configModuleTwitterAcc
 				newFeed.Destinations = []feedDestination{{Channel: i.ChannelID}}
-				if opt, ok := optionMap["handle"]; ok {
+				//TODO: FIX THIS
+				/*if opt, ok := optionMap["handle"]; ok {
 					if twitterClient == nil {
 						//TODO: log
 						InteractionRespond("Twitter Client is not connected...", s, i)
@@ -700,12 +700,12 @@ var (
 							}
 						}
 					}
-				}
+				}*/
 				if opt, ok := optionMap["name"]; ok {
 					newFeed.Name = opt.StringValue()
 				}
 				// Identifiers are empty
-				if newFeed.Name == "" || newFeed.ID == "" {
+				if newFeed.Name == "" || newFeed.Handle == "" {
 					InteractionRespond("Config name or feed identifier was empty... Try again!", s, i)
 					return
 				}
@@ -733,7 +733,7 @@ var (
 				feeds = append(feeds, feedThread{
 					Group:    feedTwitterAccount,
 					Name:     newFeed.Name,
-					Ref:      newFeed.ID,
+					Ref:      newFeed.Handle,
 					Config:   newFeed,
 					WaitMins: waitMins,
 				})

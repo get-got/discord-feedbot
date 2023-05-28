@@ -1,21 +1,20 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/ChimeraCoder/anaconda"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/gtuk/discordwebhook"
+	twitterscraper "github.com/n0madic/twitter-scraper"
 )
 
 var (
@@ -37,7 +36,7 @@ type configModuleTwitter struct {
 type configModuleTwitterAcc struct {
 	// MAIN
 	Name         string            `json:"name"`
-	ID           string            `json:"id"`
+	Handle       string            `json:"handle"`
 	Destinations []feedDestination `json:"destinations"`
 
 	WaitMins *int `json:"waitMins,omitempty"`
@@ -98,105 +97,92 @@ func loadConfig_Module_Twitter() error {
 }
 
 var (
-	twitterAccessToken    string
-	twitterAccessSecret   string
-	twitterConsumerKey    string
-	twitterConsumerSecret string
+	twitterUsername string
+	twitterPassword string
+	twitterLoggedIn bool = false
 
-	twitterClient    *anaconda.TwitterApi
-	twitterConnected bool = false
+	twitterScraper *twitterscraper.Scraper
 )
 
 func openTwitter() error {
-	if twitterAccessToken == "" || twitterAccessSecret == "" ||
-		twitterConsumerKey == "" || twitterConsumerSecret == "" {
-		return errors.New("twitter credentials are incomplete")
-	}
-	twitterClient = anaconda.NewTwitterApiWithCredentials(
-		twitterAccessToken, twitterAccessSecret,
-		twitterConsumerKey, twitterConsumerSecret,
-	)
+	twitterScraper = twitterscraper.New()
 
-	twitterSelf, err := twitterClient.GetSelf(url.Values{})
-	if err != nil {
-		return fmt.Errorf("twitter api failed to fetch data on self: %s", err.Error())
-	} else {
-		twitterConnected = true
-		log.Println(color.HiMagentaString("Twitter API connected to @%s", twitterSelf.ScreenName))
+	if twitterUsername != "" &&
+		twitterPassword != "" {
+		log.Println(color.MagentaString("Connecting to API..."))
+
+		twitterLoginCount := 0
+	do_twitter_login:
+		twitterLoginCount++
+		if twitterLoginCount > 1 {
+			time.Sleep(3 * time.Second)
+		}
+
+		if err := twitterScraper.Login(twitterUsername, twitterPassword); err != nil {
+			log.Println(color.HiRedString("Login Error: %s", err.Error()))
+			if twitterLoginCount <= 3 {
+				goto do_twitter_login
+			} else {
+				log.Println(color.HiRedString(
+					"Failed to login to Twitter, the bot will not fetch media..."))
+			}
+		} else {
+			log.Println(color.HiMagentaString("Connected"))
+			if twitterScraper.IsLoggedIn() {
+				twitterLoggedIn = true
+			}
+		}
 	}
 
 	return nil
 }
 
 func handleTwitterAcc(account configModuleTwitterAcc) error {
-	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.ID)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.ID))
-
-	if twitterClient == nil {
-		return errors.New("twitter client is invalid")
-	}
+	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.Handle)
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.Handle))
 
 	// Vars
-	includeRetweets := false
+	/*includeRetweets := false
 	if account.IncludeRetweets != nil {
 		includeRetweets = *account.IncludeRetweets
-	}
+	}*/
 	excludeReplies := false
 	if account.ExcludeReplies != nil {
 		excludeReplies = *account.ExcludeReplies
 	}
 
 	// User Info
-	id64, err := strconv.ParseInt(account.ID, 10, 64)
+	user, err := twitterScraper.GetProfile(account.Handle)
 	if err != nil {
-		return fmt.Errorf("error converting ID to int64: %s", err.Error())
+		return fmt.Errorf("[ID:%s] failed to fetch twitter user @%s", account.Handle, err.Error())
 	}
-	userInfo, err := twitterClient.GetUsersLookupByIds([]int64{id64}, url.Values{})
-	if err != nil {
-		return fmt.Errorf("[ID:%s] failed to fetch twitter user: %s", account.ID, err.Error())
-	}
-	if len(userInfo) == 0 {
-		return fmt.Errorf("[ID:%s] no users found", account.ID)
-	}
-	user := userInfo[0]
 
 	// User Appearance Vars
-	handle := user.ScreenName
+	handle := account.Handle
 	username := user.Name
 	if account.MaskUsername != nil {
 		username = *account.MaskUsername
 	}
-	avatar := strings.ReplaceAll(user.ProfileImageUrlHttps, "_normal", "_400x400")
+	avatar := strings.ReplaceAll(user.Avatar, "_normal", "_400x400")
 	if account.MaskAvatar != nil {
 		avatar = *account.MaskAvatar
 	}
-	userColor := user.ProfileLinkColor
+	userColor := ""
+	/*userColor := user.Avatar //TODO: FIX THIS
 	if account.MaskColor != nil {
 		userColor = *account.MaskColor
-	}
+	}*/
 
 	// User Timeline
-	tmpArgs := url.Values{}
-	tmpArgs.Add("user_id", account.ID)
-	tmpArgs.Add("count", "35")
-	tmpArgs.Add("include_rts", strconv.FormatBool(includeRetweets))
-	tmpArgs.Add("exclude_replies", "false")
-	tmpArgs.Add("tweet_mode", "extended")
-	tweets, err := twitterClient.GetUserTimeline(tmpArgs)
-	if err != nil {
-		return fmt.Errorf("[ID:%s] error fetching timeline: %s", account.ID, err.Error())
-	}
-	if len(tweets) == 0 {
-		return fmt.Errorf("[ID:%s] timeline has no tweets", account.ID)
-	}
+	tweets := twitterScraper.GetTweets(context.Background(), account.Handle, 50)
 
 	// FOREACH Tweet
-	for i := len(tweets) - 1; i >= 0; i-- { // process oldest to newest
+	//for i := len(tweets) - 1; i >= 0; i-- { // process oldest to newest
+	for tweet := range tweets {
 		// Tweet Vars
 		//TODO: calc & check timespan
-		tweet := tweets[i]
 		//tweetPathS := handle + "/" + tweet.IdStr
-		tweetPath := handle + "/status/" + tweet.IdStr
+		tweetPath := handle + "/status/" + tweet.ID
 		tweetLink := "https://twitter.com/" + tweetPath
 		/*tweetParent := tweet
 		if tweet.RetweetedStatus != nil {
@@ -271,11 +257,11 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 		}
 
 		// Init Check
-		vibeCheck = checkLists(vibeCheck, tweet.FullText)
+		vibeCheck = checkLists(vibeCheck, tweet.Tweet.Text)
 
 		//TODO: check media titles
 		// THREAD CHECKS
-		if excludeReplies && tweet.FullText[:1] == "@" {
+		if excludeReplies && tweet.Tweet.Text[:1] == "@" {
 			vibeCheck = false
 		}
 		//TODO: Fix/Finish Thread Checking below
@@ -319,7 +305,7 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 		// Retweet Filter TODO:check
 		if len(account.BlacklistRetweets) > 0 && tweet.RetweetedStatus != nil {
 			for _, handle := range account.BlacklistRetweets {
-				if strings.Contains(tweet.FullText, fmt.Sprintf("RT %s: ", handle)) {
+				if strings.Contains(tweet.Tweet.Text, fmt.Sprintf("RT %s: ", handle)) {
 					vibeCheck = false
 					break
 				}
@@ -328,28 +314,25 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 
 		// Tweet Info
 		prefixLikes := "No"
-		if tweet.FavoriteCount > 0 {
-			prefixLikes = humanize.Comma(int64(tweet.FavoriteCount))
+		if tweet.Likes > 0 {
+			prefixLikes = humanize.Comma(int64(tweet.Likes))
 		}
 		suffixLikes := ""
-		if tweet.FavoriteCount != 1 {
+		if tweet.Likes != 1 {
 			suffixLikes = "s"
 		}
 		prefixRetweets := "No"
-		if tweet.RetweetCount > 0 {
-			prefixRetweets = humanize.Comma(int64(tweet.RetweetCount))
+		if tweet.Retweets > 0 {
+			prefixRetweets = humanize.Comma(int64(tweet.Retweets))
 		}
 		suffixRetweets := ""
-		if tweet.RetweetCount != 1 {
+		if tweet.Retweets != 1 {
 			suffixRetweets = "s"
 		}
-		creationTime, err := tweet.CreatedAtTime()
-		if err != nil {
-			creationTime = time.Now() //TODO: not this
-		}
+		creationTime := tweet.TimeParsed
 
 		// Embed Vars
-		embedDesc := tweet.FullText
+		embedDesc := tweet.Tweet.Text
 		embedFooterText := fmt.Sprintf("%s - %s like%s, %s retweet%s",
 			humanize.Time(creationTime),
 			prefixLikes, suffixLikes, prefixRetweets, suffixRetweets)
@@ -408,22 +391,7 @@ func handleTwitterAccCmdOpts(config *configModuleTwitterAcc,
 
 	// Optional Vars
 	if opt, ok := optionMap["change-handle"]; ok {
-		if twitterClient == nil {
-			return errors.New("twitter client is not connected")
-		} else {
-			handle := opt.StringValue()
-			userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-			if err != nil {
-				return errors.New("error fetching users: " + err.Error())
-			} else {
-				if len(userResults) > 0 {
-					userResult := userResults[0]
-					config.ID = userResult.IdStr
-				} else {
-					return errors.New("no twitter users found for this handle")
-				}
-			}
-		}
+		config.Handle = opt.StringValue()
 	}
 	if opt, ok := optionMap["tag"]; ok {
 		tagged := opt.UserValue(s)

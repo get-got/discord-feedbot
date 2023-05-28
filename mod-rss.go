@@ -5,9 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -105,7 +103,8 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		username := rss.Title
 		avatar := ""
 
-		if feed.UseTwitter != nil {
+		//TODO: FIX THIS
+		/*if feed.UseTwitter != nil {
 			if twitterClient == nil {
 				return errors.New(prefixHere + "feed uses Twitter for appearance but Twitter client is empty")
 			}
@@ -120,7 +119,7 @@ func handleRssFeed(feed configModuleRssFeed) error {
 			twitterUser := twitterUsers[0]
 			username = twitterUser.Name
 			avatar = strings.ReplaceAll(twitterUser.ProfileImageUrlHttps, "_normal", "_400x400")
-		}
+		}*/
 
 		if feed.Username != nil {
 			username = *feed.Username
@@ -278,7 +277,8 @@ func handleRssCmdOpts(config *configModuleRssFeed,
 		val := opt.StringValue()
 		config.Username = &val
 	}
-	if opt, ok := optionMap["twitter"]; ok {
+	//TODO: FIX THIS
+	/*if opt, ok := optionMap["twitter"]; ok {
 		if twitterClient == nil {
 			//TODO: log
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -309,7 +309,7 @@ func handleRssCmdOpts(config *configModuleRssFeed,
 				}
 			}
 		}
-	}
+	}*/
 	// Optional Vars -Lists
 	if opt, ok := optionMap["blacklist"]; ok {
 		var list []string

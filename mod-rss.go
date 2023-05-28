@@ -132,6 +132,11 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		for i := len(rss.Items) - 1; i >= 0; i-- { // process oldest to newest
 			entry := rss.Items[i]
 			link := entry.Link
+			// Unwrap Google Links
+			if strings.Contains(link, "&url=") && strings.Contains(link, "&ct=") {
+				link = link[strings.Index(link, "&url=")+5:]
+				link = link[:strings.Index(link, "&ct=")]
+			}
 
 			// SETUP CHECK
 			vibeCheck := true

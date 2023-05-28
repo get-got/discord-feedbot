@@ -2,7 +2,7 @@ package main
 
 const (
 	projectName        = "DISCORD FEEDBOT (DFB)"
-	projectVersion     = "1.0.0-a.0"
+	projectVersion     = "1.0.0-a.2023-05-28"
 	projectNameVersion = projectName + " " + projectVersion
 
 	projectRepo          = "get-got/discord-feedbot"

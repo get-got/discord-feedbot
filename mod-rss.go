@@ -103,23 +103,20 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		username := rss.Title
 		avatar := ""
 
-		//TODO: FIX THIS
-		/*if feed.UseTwitter != nil {
-			if twitterClient == nil {
-				return errors.New(prefixHere + "feed uses Twitter for appearance but Twitter client is empty")
+		if feed.UseTwitter != nil {
+			handle := *feed.UseTwitter
+			if cachedAvatar, exists := twitterAvatarCache[handle]; exists {
+				avatar = cachedAvatar
+			} else {
+				twitterUser, err := twitterScraper.GetProfile(handle)
+				if err != nil {
+					return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but failed to fetch twitter user: %s", err.Error())
+				}
+				username = twitterUser.Name
+				avatar = strings.ReplaceAll(twitterUser.Avatar, "_normal", "_400x400")
+				twitterAvatarCache[handle] = avatar
 			}
-			id64, err := strconv.ParseInt(*feed.UseTwitter, 10, 64)
-			if err != nil {
-				return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but error converting ID to int64: %s", err.Error())
-			}
-			twitterUsers, err := twitterClient.GetUsersLookupByIds([]int64{id64}, url.Values{})
-			if err != nil {
-				return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but failed to fetch twitter user: %s", err.Error())
-			}
-			twitterUser := twitterUsers[0]
-			username = twitterUser.Name
-			avatar = strings.ReplaceAll(twitterUser.ProfileImageUrlHttps, "_normal", "_400x400")
-		}*/
+		}
 
 		if feed.Username != nil {
 			username = *feed.Username

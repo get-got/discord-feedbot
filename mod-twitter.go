@@ -24,6 +24,8 @@ var (
 	moduleNameTwitterAccounts = "twitter-accounts"
 
 	twitterLogo = "https://i.imgur.com/BEZiTLN.png"
+
+	twitterAvatarCache = make(map[string]string)
 )
 
 type configModuleTwitter struct {

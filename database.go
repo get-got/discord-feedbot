@@ -27,6 +27,9 @@ type dbRef struct {
 
 func loadDatabase() error {
 	var err error
+	if err = os.MkdirAll(pathData, 0755); err != nil {
+		return err
+	}
 	dbRefs, err = gorm.Open(sqlite.Open(pathDatabaseRefs), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})

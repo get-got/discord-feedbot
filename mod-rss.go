@@ -39,9 +39,9 @@ type configModuleRssFeed struct {
 	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
-	Username   *string `json:"username,omitempty"`
-	Avatar     *string `json:"avatar,omitempty"`
-	UseTwitter *string `json:"useTwitter,omitempty"`
+	Username *string `json:"username,omitempty"`
+	Avatar   *string `json:"avatar,omitempty"`
+	Twitter  *string `json:"twitter,omitempty"`
 
 	// GENERIC RULES
 	Blacklist [][]string `json:"blacklist,omitempty"`
@@ -103,8 +103,8 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		username := rss.Title
 		avatar := ""
 
-		if feed.UseTwitter != nil {
-			handle := *feed.UseTwitter
+		if feed.Twitter != nil {
+			handle := *feed.Twitter
 			if cachedAvatar, exists := twitterAvatarCache[handle]; exists {
 				avatar = cachedAvatar
 			} else {

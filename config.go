@@ -115,9 +115,10 @@ var (
 )
 
 type configGeneralSettings struct {
-	Debug          bool `json:"debug,omitempty"`
-	LogLevel       int  `json:"logLevel,omitempty"`
-	OutputSettings bool `json:"outputSettings,omitempty"`
+	Debug          bool   `json:"debug,omitempty"`
+	LogLevel       int    `json:"logLevel,omitempty"`
+	OutputSettings bool   `json:"outputSettings,omitempty"`
+	DefaultColor   string `json:"defaultColor,omitempty"`
 }
 
 //#endregion

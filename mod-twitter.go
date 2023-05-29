@@ -32,6 +32,8 @@ type configModuleTwitter struct {
 	WaitMins int `json:"waitMins,omitempty"`
 	//DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
+	DefaultColor string `json:"defaultColor,omitempty"`
+
 	Accounts []configModuleTwitterAcc `json:"accounts"`
 }
 
@@ -45,9 +47,9 @@ type configModuleTwitterAcc struct {
 	//DayLimit *int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
 	// APPEARANCE
-	MaskUsername *string `json:"maskUsername,omitempty"`
-	MaskAvatar   *string `json:"maskAvatar,omitempty"`
-	MaskColor    *string `json:"maskColor,omitempty"`
+	Username string `json:"username,omitempty"`
+	Avatar   string `json:"avatar,omitempty"`
+	Color    string `json:"color,omitempty"`
 
 	// GENERIC RULES
 	Blacklist [][]string `json:"blacklist"`
@@ -162,18 +164,23 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 	// User Appearance Vars
 	handle := account.Handle
 	username := user.Name
-	if account.MaskUsername != nil {
-		username = *account.MaskUsername
+	if account.Username != "" {
+		username = account.Username
 	}
 	avatar := strings.ReplaceAll(user.Avatar, "_normal", "_400x400")
-	if account.MaskAvatar != nil {
-		avatar = *account.MaskAvatar
+	if account.Avatar != "" {
+		avatar = account.Avatar
 	}
-	userColor := ""
-	/*userColor := user.Avatar //TODO: FIX THIS
-	if account.MaskColor != nil {
-		userColor = *account.MaskColor
-	}*/
+	userColor := projectColor             // default to project
+	if generalConfig.DefaultColor != "" { // override with general if present
+		userColor = generalConfig.DefaultColor
+	}
+	if twitterConfig.DefaultColor != "" { // override with twitter if present
+		userColor = twitterConfig.DefaultColor
+	}
+	if account.Color != "" { // override with specific if present
+		userColor = account.Color
+	}
 
 	// User Timeline
 	tweets := twitterScraper.GetTweets(context.Background(), account.Handle, 50)
@@ -338,7 +345,10 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 		embedFooterText := fmt.Sprintf("%s - %s like%s, %s retweet%s",
 			humanize.Time(creationTime),
 			prefixLikes, suffixLikes, prefixRetweets, suffixRetweets)
-		embedColor := hexdec(userColor)
+		embedColor, err := hexdec(userColor)
+		if err != nil {
+			log.Println("Error parsing color: " + err.Error())
+		}
 
 		//TODO: Embed Author if RT
 
@@ -412,16 +422,13 @@ func handleTwitterAccCmdOpts(config *configModuleTwitterAcc,
 	}
 	// Optional Vars - Appearance
 	if opt, ok := optionMap["username"]; ok {
-		val := opt.StringValue()
-		config.MaskUsername = &val
+		config.Username = opt.StringValue()
 	}
 	if opt, ok := optionMap["avatar"]; ok {
-		val := opt.StringValue()
-		config.MaskAvatar = &val
+		config.Avatar = opt.StringValue()
 	}
 	if opt, ok := optionMap["color"]; ok { //TODO: conversion?
-		val := opt.StringValue()
-		config.MaskColor = &val
+		config.Color = opt.StringValue()
 	}
 	// Optional Vars - Rules
 	if opt, ok := optionMap["exclude-replies"]; ok {

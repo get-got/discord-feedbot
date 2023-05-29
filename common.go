@@ -57,9 +57,9 @@ func containsAny(haystack string, needles []string) bool {
 	return false
 }
 
-func hexdec(s string) string {
-	ret, _ := strconv.ParseInt(strings.ReplaceAll(s, "#", ""), 16, 32)
-	return fmt.Sprint(ret)
+func hexdec(s string) (string, error) {
+	ret, err := strconv.ParseInt(strings.ReplaceAll(strings.ReplaceAll(s, "0x", ""), "#", ""), 16, 64)
+	return fmt.Sprint(ret), err
 }
 
 func ssuff(i int) string {

@@ -39,9 +39,9 @@ type configModuleRssFeed struct {
 	//DisableInfo  *bool    `json:"disableInfo,omitempty"`
 
 	// APPEARANCE
-	Username *string `json:"username,omitempty"`
-	Avatar   *string `json:"avatar,omitempty"`
-	Twitter  *string `json:"twitter,omitempty"`
+	Username string `json:"username,omitempty"`
+	Avatar   string `json:"avatar,omitempty"`
+	Twitter  string `json:"twitter,omitempty"`
 
 	// GENERIC RULES
 	Blacklist [][]string `json:"blacklist,omitempty"`
@@ -103,8 +103,8 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		username := rss.Title
 		avatar := ""
 
-		if feed.Twitter != nil {
-			handle := *feed.Twitter
+		if feed.Twitter != "" {
+			handle := feed.Twitter
 			if cachedAvatar, exists := twitterAvatarCache[handle]; exists {
 				avatar = cachedAvatar
 			} else {
@@ -118,11 +118,12 @@ func handleRssFeed(feed configModuleRssFeed) error {
 			}
 		}
 
-		if feed.Username != nil {
-			username = *feed.Username
+		// User Appearance Vars
+		if feed.Username != "" {
+			username = feed.Username
 		}
-		if feed.Avatar != nil {
-			avatar = *feed.Avatar
+		if feed.Avatar != "" {
+			avatar = feed.Avatar
 		}
 
 		// FOREACH Entry
@@ -228,6 +229,7 @@ func handleRssFeed(feed configModuleRssFeed) error {
 						if tags != "" {
 							tags += "\n"
 						}
+						//TODO: Published X \n link
 						reply := tags + link
 						// SEND
 						err = sendWebhook(destination.Channel, link, discordwebhook.Message{
@@ -272,46 +274,14 @@ func handleRssCmdOpts(config *configModuleRssFeed,
 		config.WaitMins = &val
 	}
 	if opt, ok := optionMap["avatar"]; ok {
-		val := opt.StringValue()
-		config.Avatar = &val
+		config.Avatar = opt.StringValue()
 	}
 	if opt, ok := optionMap["username"]; ok {
-		val := opt.StringValue()
-		config.Username = &val
+		config.Username = opt.StringValue()
 	}
-	//TODO: FIX THIS
-	/*if opt, ok := optionMap["twitter"]; ok {
-		if twitterClient == nil {
-			//TODO: log
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &discordgo.InteractionResponseData{Content: "Twitter Client is not connected..."},
-			})
-			return errors.New("twitter client is nil")
-		} else {
-			handle := opt.StringValue()
-			userResults, err := twitterClient.GetUsersLookup(handle, url.Values{})
-			if err == nil {
-				//TODO: log
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{Content: "ERROR FETCHING USERS..."},
-				})
-				return fmt.Errorf("error fetching users: %s", err.Error())
-			} else {
-				if len(userResults) > 0 {
-					config.UseTwitter = &userResults[0].IdStr
-				} else {
-					//TODO: log
-					s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-						Type: discordgo.InteractionResponseChannelMessageWithSource,
-						Data: &discordgo.InteractionResponseData{Content: "No Twitter users found for this handle..."},
-					})
-					return errors.New("no twitter users found for this handle")
-				}
-			}
-		}
-	}*/
+	if opt, ok := optionMap["twitter"]; ok {
+		config.Twitter = opt.StringValue()
+	}
 	// Optional Vars -Lists
 	if opt, ok := optionMap["blacklist"]; ok {
 		var list []string

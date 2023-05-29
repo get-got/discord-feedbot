@@ -91,8 +91,8 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRssFeed(feed configModuleRssFeed) error {
-	prefixHere := fmt.Sprintf("handleRssFeed(\"%s\"): ", feed.URL)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.URL))
+	prefixHere := fmt.Sprintf("handleRssFeed(\"%s\"): ", feed.Name)
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.Name))
 	//
 	fp := gofeed.NewParser()
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"

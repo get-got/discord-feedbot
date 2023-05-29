@@ -141,7 +141,7 @@ func openTwitter() error {
 
 func handleTwitterAcc(account configModuleTwitterAcc) error {
 	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.Handle)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s", account.Handle))
+	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s @%s", account.Name, account.Handle))
 
 	// Vars
 	/*includeRetweets := false

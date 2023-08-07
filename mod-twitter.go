@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -29,6 +30,8 @@ var (
 )
 
 type configModuleTwitter struct {
+	OverwriteCache string `json:"overwriteCache,omitempty"`
+
 	WaitMins int `json:"waitMins,omitempty"`
 	//DayLimit int `json:"dayLimit,omitempty"` // X days = too old, ignored
 
@@ -94,6 +97,11 @@ func loadConfig_Module_Twitter() error {
 					log.Println(color.HiYellowString(prefixHere+"\n%s", color.YellowString(string(s))))
 				}
 			}
+
+			// Overwrite Cookies?
+			if twitterConfig.OverwriteCache != "" {
+				pathDataCookiesTwitter = twitterConfig.OverwriteCache
+			}
 		}
 	}
 
@@ -101,19 +109,53 @@ func loadConfig_Module_Twitter() error {
 }
 
 var (
-	twitterUsername string
-	twitterPassword string
-	twitterLoggedIn bool = false
+	twitterUsername  string
+	twitterPassword  string
+	twitterConnected bool = false
 
 	twitterScraper *twitterscraper.Scraper
 )
 
 func openTwitter() error {
+
+	twitterImport := func() error {
+		f, err := os.Open(pathDataCookiesTwitter)
+		if err != nil {
+			return err
+		}
+		var cookies []*http.Cookie
+		err = json.NewDecoder(f).Decode(&cookies)
+		if err != nil {
+			return err
+		}
+		twitterScraper.SetCookies(cookies)
+		twitterScraper.IsLoggedIn()
+		_, err = twitterScraper.GetProfile("x")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	twitterExport := func() error {
+		cookies := twitterScraper.GetCookies()
+		js, err := json.Marshal(cookies)
+		if err != nil {
+			return err
+		}
+		f, err := os.Create(pathDataCookiesTwitter)
+		if err != nil {
+			return err
+		}
+		f.Write(js)
+		return nil
+	}
+
 	twitterScraper = twitterscraper.New()
 
 	if twitterUsername != "" &&
 		twitterPassword != "" {
-		log.Println(color.MagentaString("Connecting to API..."))
+		log.Println(color.MagentaString("Connecting to Twitter (X)..."))
 
 		twitterLoginCount := 0
 	do_twitter_login:
@@ -122,20 +164,32 @@ func openTwitter() error {
 			time.Sleep(3 * time.Second)
 		}
 
-		if err := twitterScraper.Login(twitterUsername, twitterPassword); err != nil {
-			log.Println(color.HiRedString("Login Error: %s", err.Error()))
-			if twitterLoginCount <= 3 {
-				goto do_twitter_login
+		if twitterImport() != nil {
+			twitterScraper.ClearCookies()
+			if err := twitterScraper.Login(twitterUsername, twitterPassword); err != nil {
+				log.Println(color.HiRedString("Login Error: %s", err.Error()))
+				if twitterLoginCount <= 3 {
+					goto do_twitter_login
+				} else {
+					log.Println(color.HiRedString(
+						"Failed to login to Twitter (X), the bot will not fetch this media..."))
+				}
 			} else {
-				log.Println(color.HiRedString(
-					"Failed to login to Twitter, the bot will not fetch media..."))
+				twitterConnected = true
+				defer twitterExport()
+				log.Println(color.HiMagentaString("Connected"))
+				if twitterScraper.IsLoggedIn() {
+					log.Println(color.HiMagentaString("Connected to @%s via new login", twitterUsername))
+				} else {
+					log.Println(color.HiRedString("Scraper login seemed successful but bot is not logged in, Twitter (X) parsing may not work..."))
+				}
 			}
 		} else {
-			log.Println(color.HiMagentaString("Connected"))
-			if twitterScraper.IsLoggedIn() {
-				twitterLoggedIn = true
-			}
+			log.Println(color.HiMagentaString("Connected to @%s via cache", twitterUsername))
+			twitterConnected = true
 		}
+	} else {
+		log.Println(color.MagentaString("Twitter (X) credentials missing, the bot will not fetch this media..."))
 	}
 
 	return nil

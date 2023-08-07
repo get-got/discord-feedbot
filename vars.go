@@ -1,5 +1,7 @@
 package main
 
+import "os"
+
 const (
 	projectName        = "DISCORD FEEDBOT (DFB)"
 	projectVersion     = "1.0.0-a.2023-05-28"
@@ -12,6 +14,9 @@ const (
 	projectReleaseApiURL = "https://api.github.com/repos/" + projectRepo + "/releases/latest"
 )
 
-const (
+var (
 	pathData = "data"
+
+	pathDataCookies        = pathData + string(os.PathSeparator) + "cookies"
+	pathDataCookiesTwitter = pathDataCookies + string(os.PathSeparator) + "twitter.json"
 )

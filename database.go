@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-const (
+var (
 	pathDatabaseRefs = pathData + string(os.PathSeparator) + "reference-log.db"
 )
 

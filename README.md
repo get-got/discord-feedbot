@@ -1,4 +1,6 @@
-# discord-feedbot
+<div align="center">
+    <img src="https://i.imgur.com/Qnl9T7m.png" alt="Discord Feed Bot"/>
+</div>
 
 ## WORK IN PROGRESS
 

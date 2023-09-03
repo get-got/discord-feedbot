@@ -104,7 +104,7 @@ func getFeedsSleepingCount(filterGroup int) int {
 }
 
 func getFeedsLatest() *feedThread {
-	var latestFeed *feedThread
+	var latestFeed *feedThread = nil
 	for _, feed := range feeds {
 		if feed.LastRan.After(latestFeed.LastRan) {
 			latestFeed = &feed

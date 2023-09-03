@@ -29,6 +29,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
+	"github.com/hako/durafmt"
 )
 
 var (
@@ -149,10 +150,22 @@ func main() {
 				})
 				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
 
-				// 4th - Latest Feed
-				latestFeed := getFeedsLatest()
+				// 4th - Uptime
+				presence = fmt.Sprintf("for %s", durafmt.ParseShort(time.Since(timeLaunched)).String())
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: presence,
+						Type: discordgo.ActivityTypeGame,
+					}},
+					Status: discordConfig.PresenceType,
+				})
+				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+
+				// 5th - Latest Feed
+				/*latestFeed := getFeedsLatest()
 				if latestFeed != nil {
-					presence = fmt.Sprintf("last feed %s/%s", latestFeed.Name, latestFeed.Ref)
+					feed := *latestFeed
+					presence = fmt.Sprintf("last feed %s/%s", feed.Name, feed.Ref)
 					discord.UpdateStatusComplex(discordgo.UpdateStatusData{
 						Activities: []*discordgo.Activity{{
 							Name: presence,
@@ -161,7 +174,7 @@ func main() {
 						Status: discordConfig.PresenceType,
 					})
 					time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-				}
+				}*/
 			}
 		}()
 

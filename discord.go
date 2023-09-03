@@ -15,18 +15,73 @@ import (
 
 var (
 	discordConfig configDiscordSettings
+
+	discordConfigDef_Presence_Enabled bool = true
 )
+
+type configDiscordPresence struct {
+	Enabled  *bool                  `json:"enabled"`
+	Type     string                 `json:"type"`     // Online, Idle, DND, Invisible
+	Label    discordgo.ActivityType `json:"label"`    // Playing[0], Streaming[1], Listening[2], Watching[3], Custom[4,DOESNT WORK], Competing[5]
+	Status   string                 `json:"status"`   // text
+	Duration int                    `json:"duration"` // seconds
+}
 
 type configDiscordSettings struct {
 	//LogLevel            int      `json:"apiLogLevel,omitempty"`
 	//Timeout             int      `json:"timeout,omitempty"`
 	//ExitOnBadConnection bool     `json:"exitOnBadConnection,omitempty"`
 	//OutputMessages      bool     `json:"outputMessages,omitempty"`
-	Admins              []string `json:"admins"`
-	DeleteCommands      bool     `json:"deleteCommands"`
-	PresenceEnabled     bool     `json:"presenceEnabled"`
-	PresenceRefreshRate int      `json:"presenceRefreshRate"`
-	PresenceType        string   `json:"presenceType,omitempty"`
+	Admins         []string                `json:"admins"`
+	DeleteCommands bool                    `json:"deleteCommands"`
+	Presence       []configDiscordPresence `json:"presence"`
+}
+
+var discordConfigDefault = configDiscordSettings{
+	Presence: []configDiscordPresence{
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusOnline),
+			Label:    0,
+			Status:   "Discord Feedbot",
+			Duration: 10,
+		},
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusOnline),
+			Label:    0,
+			Status:   "DFB {{dfbVersion}}",
+			Duration: 15,
+		},
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusDoNotDisturb),
+			Label:    3,
+			Status:   "{{linkCount}} links stored",
+			Duration: 30,
+		},
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusDoNotDisturb),
+			Label:    3,
+			Status:   "{{feedCount}} feeds",
+			Duration: 30,
+		},
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusDoNotDisturb),
+			Label:    2,
+			Status:   "{{numServers}} servers",
+			Duration: 15,
+		},
+		{
+			Enabled:  &discordConfigDef_Presence_Enabled,
+			Type:     string(discordgo.StatusIdle),
+			Label:    3,
+			Status:   "for {{uptime}}",
+			Duration: 30,
+		},
+	},
 }
 
 func loadConfig_Discord() error {
@@ -63,6 +118,7 @@ func loadConfig_Discord() error {
 				configStr = strings.ReplaceAll(configStr, "\\\\\\", "\\\\")
 			}
 			// Parse
+			discordConfig = discordConfigDefault
 			if err = json.Unmarshal([]byte(configStr), &discordConfig); err != nil {
 				return fmt.Errorf("failed to parse discord config file: %s", err)
 			}
@@ -76,11 +132,6 @@ func loadConfig_Discord() error {
 				}
 			}
 		}
-	}
-
-	// FIX
-	if discordConfig.PresenceRefreshRate == 0 {
-		discordConfig.PresenceRefreshRate = 30
 	}
 
 	return nil

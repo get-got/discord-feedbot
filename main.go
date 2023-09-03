@@ -24,6 +24,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -73,6 +75,51 @@ var (
 	twitterAccount_Channel   = make(chan feedThread)
 )
 
+func getFeedCountLabel(filterGroup int) string {
+	feedCount := getFeedCount(filterGroup)
+	if feedCount == 0 {
+		return "no feeds"
+	} else if feedCount == 1 {
+		return "1 feed"
+	} else { // 2+
+		return fmt.Sprintf("%d feeds", feedCount)
+	}
+	return ""
+}
+
+func dataKeyReplacement(input string) string {
+	//TODO: Case-insensitive key replacement. -- If no streamlined way to do it, convert to lower to find substring location but replace normally
+	if strings.Contains(input, "{{") && strings.Contains(input, "}}") {
+		timeNow := time.Now()
+		keys := [][]string{
+			{"{{goVersion}}", runtime.Version()},
+			{"{{dgVersion}}", discordgo.VERSION},
+			{"{{dfbVersion}}", projectVersion},
+			{"{{apiVersion}}", discordgo.APIVersion},
+			{"{{numServers}}", fmt.Sprint(len(discord.State.Guilds))},
+			{"{{numAdmins}}", fmt.Sprint(len(discordConfig.Admins))},
+			{"{{timeNowShort}}", timeNow.Format("3:04pm")},
+			{"{{timeNowShortTZ}}", timeNow.Format("3:04pm MST")},
+			{"{{timeNowMid}}", timeNow.Format("3:04pm MST 1/2/2006")},
+			{"{{timeNowLong}}", timeNow.Format("3:04:05pm MST - January 2, 2006")},
+			{"{{timeNowShort24}}", timeNow.Format("15:04")},
+			{"{{timeNowShortTZ24}}", timeNow.Format("15:04 MST")},
+			{"{{timeNowMid24}}", timeNow.Format("15:04 MST 2/1/2006")},
+			{"{{timeNowLong24}}", timeNow.Format("15:04:05 MST - 2 January, 2006")},
+			{"{{uptime}}", durafmt.ParseShort(time.Since(timeLaunched)).String()},
+
+			{"{{linkCount}}", string(refCount())},
+			{"{{feedCount}}", string(getFeedCountLabel(feed0))},
+		}
+		for _, key := range keys {
+			if strings.Contains(input, key[0]) {
+				input = strings.ReplaceAll(input, key[0], key[1])
+			}
+		}
+	}
+	return input
+}
+
 func main() {
 
 	if err := openDiscord(); err != nil {
@@ -93,105 +140,41 @@ func main() {
 	}
 
 	// Discord Presence
-	if discordConfig.PresenceEnabled {
+
+	// Start Presence
+	if discordConfig.Presence != nil && len(discordConfig.Presence) > 0 {
 		go func() {
 			for {
-				/*
-					output += fmt.Sprintf("\n• %s: `%s` \t\t_Last ran %s < %d time%s, every %d minute%s >_",
-						getFeedTypeName(feedThread.Group), feedThread.Name,
-						humanize.Time(feedThread.LastRan), feedThread.TimesRan, ssuff(feedThread.TimesRan),
-						feedThread.WaitMins, ssuff(feedThread.WaitMins),
-					)*/
-				presence := ""
-
-				// Version
-				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Activities: []*discordgo.Activity{{
-						Name: fmt.Sprintf("Feedbot %s", projectVersion),
-						Type: discordgo.ActivityTypeGame,
-					}},
-					Status: discordConfig.PresenceType,
-				})
-				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-
-				// Link Count
-				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Activities: []*discordgo.Activity{{
-						Name: fmt.Sprintf("%d links stored", refCount()),
-						Type: discordgo.ActivityTypeGame,
-					}},
-					Status: discordConfig.PresenceType,
-				})
-				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-
-				// Feed Count
-				feedCount := getFeedCount(feed0)
-				if feedCount == 0 {
-					presence = "no feeds"
-				} else if feedCount == 1 {
-					presence = "1 feed"
-				} else { // 2+
-					presence = fmt.Sprintf("%d feeds", feedCount)
+				// Rotate Presences
+				for _, presence := range discordConfig.Presence {
+					enabled := false
+					if presence.Enabled == nil {
+						enabled = true
+					} else {
+						enabled = *presence.Enabled
+					}
+					if enabled {
+						if presence.Status == "" {
+							discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+								Status: presence.Type,
+							})
+						} else {
+							discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+								Activities: []*discordgo.Activity{{
+									Name: dataKeyReplacement(presence.Status),
+									Type: discordgo.ActivityType(presence.Label),
+								}},
+								Status: presence.Type,
+							})
+						}
+						if presence.Duration == 0 {
+							presence.Duration = 30
+						}
+						time.Sleep(time.Duration(presence.Duration * int(time.Second)))
+					}
 				}
-				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Activities: []*discordgo.Activity{{
-						Name: presence,
-						Type: discordgo.ActivityTypeListening,
-					}},
-					Status: discordConfig.PresenceType,
-				})
-				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-
-				// Feed Activity
-				feedsRunning := getFeedsRunningCount(feed0)
-				if feedsRunning == 0 {
-					presence = "no feeds running"
-				} else if feedsRunning == 1 {
-					presence = "1 feed running"
-				} else { // 2+
-					presence = fmt.Sprintf("%d feeds running", feedsRunning)
-				}
-				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Activities: []*discordgo.Activity{{
-						Name: presence,
-						Type: discordgo.ActivityTypeWatching,
-					}},
-					Status: discordConfig.PresenceType,
-				})
-				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-
-				// Uptime
-				presence = fmt.Sprintf("for %s", durafmt.ParseShort(time.Since(timeLaunched)).String())
-				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Activities: []*discordgo.Activity{{
-						Name: presence,
-						Type: discordgo.ActivityTypeWatching,
-					}},
-					Status: discordConfig.PresenceType,
-				})
-				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-
-				// 5th - Latest Feed
-				/*latestFeed := getFeedsLatest()
-				if latestFeed != nil {
-					feed := *latestFeed
-					presence = fmt.Sprintf("last feed %s/%s", feed.Name, feed.Ref)
-					discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Activities: []*discordgo.Activity{{
-							Name: presence,
-							Type: discordgo.ActivityTypeCompeting,
-						}},
-						Status: discordConfig.PresenceType,
-					})
-					time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
-				}*/
 			}
 		}()
-
-	} else if discordConfig.PresenceType != string(discordgo.StatusOnline) {
-		discord.UpdateStatusComplex(discordgo.UpdateStatusData{
-			Status: discordConfig.PresenceType,
-		})
 	}
 
 	// Spawn Feeds

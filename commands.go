@@ -875,15 +875,19 @@ var slashCommands []*discordgo.ApplicationCommand
 
 func addSlashCommands() {
 	log.Println(color.CyanString("Initializing slash commands...\tCommands won't work until this finishes..."))
-	slashCommands = make([]*discordgo.ApplicationCommand, len(commands))
-	for i, v := range commands {
-		cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
-		if err != nil {
-			log.Panicf("Cannot create command '%v': %v", v.Name, err)
+	if discord.State.User != nil {
+		slashCommands = make([]*discordgo.ApplicationCommand, len(commands))
+		for i, v := range commands {
+			cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", v)
+			if err != nil {
+				log.Panicf("Cannot create command '%v': %v", v.Name, err)
+			}
+			slashCommands[i] = cmd
 		}
-		slashCommands[i] = cmd
+		log.Println(color.HiCyanString("Slash commands created!\tYou can now use Discord commands..."))
+	} else {
+		log.Println(color.HiRedString("Slash commands skipped due to empty user state data..."))
 	}
-	log.Println(color.HiCyanString("Slash commands created!\tYou can now use Discord commands..."))
 }
 
 func deleteSlashCommands() {

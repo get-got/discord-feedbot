@@ -242,6 +242,9 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 	// FOREACH Tweet
 	//for i := len(tweets) - 1; i >= 0; i-- { // process oldest to newest
 	for tweet := range tweets {
+		if tweet.ID == "" {
+			continue
+		}
 		// Tweet Vars
 		//TODO: calc & check timespan
 		//tweetPathS := handle + "/" + tweet.IdStr
@@ -324,8 +327,10 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 
 		//TODO: check media titles
 		// THREAD CHECKS
-		if excludeReplies && tweet.Tweet.Text[:1] == "@" {
-			vibeCheck = false
+		if len(tweet.Tweet.Text) > 0 {
+			if excludeReplies && tweet.Tweet.Text[:1] == "@" {
+				vibeCheck = false
+			}
 		}
 		//TODO: Fix/Finish Thread Checking below
 		/*if vibeCheck && tweet.InReplyToStatusIdStr != "" {

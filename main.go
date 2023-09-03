@@ -77,6 +77,9 @@ func main() {
 	if err := openDiscord(); err != nil {
 		log.Println(color.HiRedString("DISCORD LOGIN ERROR: %s", err))
 	}
+	if discordConfig.DeleteCommands {
+		deleteSlashCommands()
+	}
 	go addSlashCommands()
 	for api, err := range openAPIs() {
 		if err != nil {

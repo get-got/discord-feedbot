@@ -43,7 +43,7 @@ func loadDatabase() error {
 
 func refCount() int {
 	var refs []dbRef
-	dbRefs.Model(&dbRef{}).Group("`ref`").Find(&refs)
+	dbRefs.Model(&dbRef{}).Find(&refs)
 	return len(refs)
 }
 

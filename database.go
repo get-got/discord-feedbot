@@ -41,6 +41,12 @@ func loadDatabase() error {
 	return nil
 }
 
+func refCount() int {
+	var refs []dbRef
+	dbRefs.Model(&dbRef{}).Group("`ref`").Find(&refs)
+	return len(refs)
+}
+
 func refCheckSentAnywhere(ref string) bool {
 	var refs []dbRef
 	dbRefs.Model(&dbRef{}).Where("`ref` = ?", ref).Find(&refs)

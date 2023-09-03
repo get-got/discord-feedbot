@@ -21,12 +21,14 @@ type feedThread struct {
 	WaitMins int
 	LastRan  time.Time
 	TimesRan int
+	Running  bool
 }
 
 var feeds []feedThread
 
 const (
-	feed000 = iota
+	feed0 = iota
+	feed1
 
 	feedInstagramAccount
 
@@ -44,7 +46,9 @@ const (
 
 func getFeedTypeName(moduleType int) string {
 	switch moduleType {
-	case feed000:
+	case feed0:
+		return ""
+	case feed1:
 		return "PLACEHOLDER"
 	case feedInstagramAccount:
 		return "Instagram Account"
@@ -64,6 +68,49 @@ func getFeedTypeName(moduleType int) string {
 		return "Twitter Account"
 	}
 	return ""
+}
+
+func getFeedCount(filterGroup int) int {
+	if filterGroup != feed0 {
+		counter := 0
+		for _, feed := range feeds {
+			if feed.Group == filterGroup {
+				counter++
+			}
+		}
+		return counter
+	}
+	return len(feeds)
+}
+
+func getFeedsRunningCount(filterGroup int) int {
+	counter := 0
+	for _, feed := range feeds {
+		if feed.Running && feed.Group == filterGroup {
+			counter++
+		}
+	}
+	return counter
+}
+
+func getFeedsSleepingCount(filterGroup int) int {
+	counter := 0
+	for _, feed := range feeds {
+		if !feed.Running && feed.Group == filterGroup {
+			counter++
+		}
+	}
+	return counter
+}
+
+func getFeedsLatest() *feedThread {
+	var latestFeed *feedThread
+	for _, feed := range feeds {
+		if feed.LastRan.After(latestFeed.LastRan) {
+			latestFeed = &feed
+		}
+	}
+	return latestFeed
 }
 
 func catalogFeeds() {
@@ -125,6 +172,7 @@ func startFeed(feed *feedThread) {
 		}
 		feed.TimesRan++
 		feed.LastRan = time.Now()
+		feed.Running = true
 		switch feed.Group {
 		case feedInstagramAccount:
 			{
@@ -139,6 +187,7 @@ func startFeed(feed *feedThread) {
 				twitterAccount_Channel <- *feed
 			}
 		}
+		feed.Running = false
 		time.Sleep(time.Duration(feed.WaitMins * int(time.Minute)))
 	}
 }

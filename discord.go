@@ -22,8 +22,11 @@ type configDiscordSettings struct {
 	//Timeout             int      `json:"timeout,omitempty"`
 	//ExitOnBadConnection bool     `json:"exitOnBadConnection,omitempty"`
 	//OutputMessages      bool     `json:"outputMessages,omitempty"`
-	Admins         []string `json:"admins"`
-	DeleteCommands bool     `json:"deleteCommands"`
+	Admins              []string `json:"admins"`
+	DeleteCommands      bool     `json:"deleteCommands"`
+	PresenceEnabled     bool     `json:"presenceEnabled"`
+	PresenceRefreshRate int      `json:"presenceRefreshRate"`
+	PresenceType        string   `json:"presenceType,omitempty"`
 }
 
 func loadConfig_Discord() error {
@@ -73,6 +76,11 @@ func loadConfig_Discord() error {
 				}
 			}
 		}
+	}
+
+	// FIX
+	if discordConfig.PresenceRefreshRate == 0 {
+		discordConfig.PresenceRefreshRate = 30
 	}
 
 	return nil

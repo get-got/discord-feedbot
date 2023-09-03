@@ -27,6 +27,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
 )
 
@@ -43,7 +44,7 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lmsgprefix)
 	log.SetPrefix("| ")
 	log.SetOutput(color.Output)
-	log.Println(color.HiCyanString(wrapHyphensW(fmt.Sprintf("Welcome to %s v%s", projectName, projectVersion))))
+	log.Println(color.HiCyanString(wrapHyphensW(fmt.Sprintf("Welcome to %s v%s", projectLabel, projectVersion))))
 
 	//TODO: Github Update Check
 
@@ -85,6 +86,86 @@ func main() {
 
 	if generalConfig.Debug {
 		log.Println(color.HiYellowString("Startup finished, took %s...", uptime()))
+	}
+
+	// Discord Presence
+	if discordConfig.PresenceEnabled {
+		go func() {
+			for {
+				/*
+					output += fmt.Sprintf("\n• %s: `%s` \t\t_Last ran %s < %d time%s, every %d minute%s >_",
+						getFeedTypeName(feedThread.Group), feedThread.Name,
+						humanize.Time(feedThread.LastRan), feedThread.TimesRan, ssuff(feedThread.TimesRan),
+						feedThread.WaitMins, ssuff(feedThread.WaitMins),
+					)*/
+				presence := ""
+
+				// 1st - Link Count
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: fmt.Sprintf("%d links stored", refCount()),
+						Type: discordgo.ActivityTypeGame,
+					}},
+					Status: discordConfig.PresenceType,
+				})
+				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+
+				// 2nd - Feed Count
+				feedCount := getFeedCount(feed0)
+				if feedCount == 0 {
+					presence = "no feeds"
+				} else if feedCount == 1 {
+					presence = "1 feed"
+				} else { // 2+
+					presence = fmt.Sprintf("%d feeds", feedCount)
+				}
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: presence,
+						Type: discordgo.ActivityTypeListening,
+					}},
+					Status: discordConfig.PresenceType,
+				})
+				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+
+				// 3rd - Feed Activity
+				feedsRunning := getFeedsRunningCount(feed0)
+				if feedsRunning == 0 {
+					presence = "no feeds running"
+				} else if feedsRunning == 1 {
+					presence = "1 feed running"
+				} else { // 2+
+					presence = fmt.Sprintf("%d feeds running", feedsRunning)
+				}
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: presence,
+						Type: discordgo.ActivityTypeWatching,
+					}},
+					Status: discordConfig.PresenceType,
+				})
+				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+
+				// 4th - Latest Feed
+				latestFeed := getFeedsLatest()
+				if latestFeed != nil {
+					presence = fmt.Sprintf("last feed %s/%s", latestFeed.Name, latestFeed.Ref)
+					discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+						Activities: []*discordgo.Activity{{
+							Name: presence,
+							Type: discordgo.ActivityTypeCompeting,
+						}},
+						Status: discordConfig.PresenceType,
+					})
+					time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+				}
+			}
+		}()
+
+	} else if discordConfig.PresenceType != string(discordgo.StatusOnline) {
+		discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+			Status: discordConfig.PresenceType,
+		})
 	}
 
 	// Spawn Feeds

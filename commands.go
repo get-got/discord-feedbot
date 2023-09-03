@@ -318,7 +318,7 @@ var (
 			}
 		},
 		"info": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			output := "**" + projectName + " " + projectVersion + "**"
+			output := "**" + projectLabel + " " + projectVersion + "**"
 			output += "\n• discordgo v" + discordgo.VERSION + " with Discord API v" + discordgo.APIVersion
 			output += "\n_Launched " + humanize.Time(timeLaunched) + "_"
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

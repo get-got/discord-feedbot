@@ -3,7 +3,8 @@ package main
 import "os"
 
 const (
-	projectName        = "DISCORD FEEDBOT (DFB)"
+	projectName        = "discord-feedbot"
+	projectLabel       = "DISCORD FEED BOT (DFB)"
 	projectVersion     = "1.0.0-a.230903"
 	projectNameVersion = projectName + " " + projectVersion
 	projectColor       = "#00FFFF"

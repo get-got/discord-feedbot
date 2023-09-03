@@ -104,7 +104,17 @@ func main() {
 					)*/
 				presence := ""
 
-				// 1st - Link Count
+				// Version
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: fmt.Sprintf("Feedbot %s", projectVersion),
+						Type: discordgo.ActivityTypeGame,
+					}},
+					Status: discordConfig.PresenceType,
+				})
+				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
+
+				// Link Count
 				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
 					Activities: []*discordgo.Activity{{
 						Name: fmt.Sprintf("%d links stored", refCount()),
@@ -114,7 +124,7 @@ func main() {
 				})
 				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
 
-				// 2nd - Feed Count
+				// Feed Count
 				feedCount := getFeedCount(feed0)
 				if feedCount == 0 {
 					presence = "no feeds"
@@ -132,7 +142,7 @@ func main() {
 				})
 				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
 
-				// 3rd - Feed Activity
+				// Feed Activity
 				feedsRunning := getFeedsRunningCount(feed0)
 				if feedsRunning == 0 {
 					presence = "no feeds running"
@@ -150,12 +160,12 @@ func main() {
 				})
 				time.Sleep(time.Duration(discordConfig.PresenceRefreshRate * int(time.Second)))
 
-				// 4th - Uptime
+				// Uptime
 				presence = fmt.Sprintf("for %s", durafmt.ParseShort(time.Since(timeLaunched)).String())
 				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
 					Activities: []*discordgo.Activity{{
 						Name: presence,
-						Type: discordgo.ActivityTypeGame,
+						Type: discordgo.ActivityTypeWatching,
 					}},
 					Status: discordConfig.PresenceType,
 				})

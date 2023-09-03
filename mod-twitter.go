@@ -421,11 +421,14 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 
 		//TODO: Send video links after embed (poll highest bitrate)
 
+		sendAttempts := 0
 		// PROCESS
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {
 				if !refCheckSentToChannel(tweetLink, destination.Channel) {
 					// SEND
+				resend:
+					sendAttempts++
 					err = sendWebhook(destination.Channel, tweetLink, discordwebhook.Message{
 						Username:  &username,
 						AvatarUrl: &avatar,
@@ -441,7 +444,17 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 					}, moduleNameTwitterAccounts)
 					if err != nil {
 						// we want it to process the rest, so no err return
-						log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
+						//TODO: implement this universally vvvvvvvv
+						if strings.Contains(err.Error(), "resource is being rate limited") {
+							log.Println(color.HiRedString(prefixHere + "webhook is being rate limited, delaying 2 seconds and trying again..."))
+							time.Sleep(2 * time.Second)
+							if sendAttempts < 5 {
+								goto resend
+							}
+							//TODO: ^^^^^^^
+						} else {
+							log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
+						}
 					}
 				}
 			}

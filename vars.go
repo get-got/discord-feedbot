@@ -4,7 +4,7 @@ import "os"
 
 const (
 	projectName        = "DISCORD FEEDBOT (DFB)"
-	projectVersion     = "1.0.0-a.2023-05-28"
+	projectVersion     = "1.0.0-a.230903"
 	projectNameVersion = projectName + " " + projectVersion
 	projectColor       = "#00FFFF"
 

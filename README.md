@@ -1,6 +1,11 @@
 <div align="center">
     <img src="https://i.imgur.com/Qnl9T7m.png" alt="Discord Feed Bot"/>
 </div>
+<p align="center">
+    <a href="https://goreportcard.com/report/github.com/get-got/discord-feedbot/" alt="Go Report Card">
+        <img src="https://goreportcard.com/badge/github.com/get-got/discord-feedbot/" />
+    </a>
+</p>
 
 ## WORK IN PROGRESS
 

@@ -59,7 +59,10 @@ func init() {
 	}
 
 	//TODO: Database Load, create if missing
-	loadDatabase()
+	databaseError := loadDatabase()
+	if databaseError != nil {
+		log.Println(color.RedString("loadDatabase() ERROR: %s", databaseError))
+	}
 }
 
 var (

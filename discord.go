@@ -7,9 +7,11 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
+	"github.com/hako/durafmt"
 	"gopkg.in/ini.v1"
 )
 
@@ -187,6 +189,56 @@ func openDiscord() error {
 	log.Println(color.HiGreenString("Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
 
 	return nil
+}
+
+func runDiscordPresences() {
+	// Rotate Presences
+	for presenceKey, presence := range discordConfig.Presence {
+		enabled := false
+		if presence.Enabled == nil {
+			enabled = true
+		} else {
+			enabled = *presence.Enabled
+		}
+		if enabled {
+			if presence.Duration == 0 {
+				presence.Duration = 15
+			}
+			// Only change status type, no text.
+			if presence.Status == "" {
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Status: presence.Type,
+				})
+			} else {
+				// Format state (referring to it as details) - Presence-specific key replacements
+				dataKeyReplacementPresence := func(input string) string {
+					input = dataKeyReplacement(input)
+					if strings.Contains(input, "{{presenceCount}}") {
+						input = strings.ReplaceAll(input, "{{presenceCount}}",
+							fmt.Sprintf("%d/%d", presenceKey+1, len(discordConfig.Presence)))
+					}
+					if strings.Contains(input, "{{presenceDuration}}") {
+						input = strings.ReplaceAll(input, "{{presenceDuration}}",
+							shortenTime(durafmt.ParseShort(
+								time.Duration(presence.Duration*int(time.Second)),
+							).String()),
+						)
+					}
+					return input
+				}
+				// Update
+				discord.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name:  dataKeyReplacementPresence(presence.Status),
+						State: dataKeyReplacementPresence(presence.StatusDetails),
+						Type:  discordgo.ActivityType(presence.Label), // Playing/Listening/Watching/etc
+					}},
+					Status: presence.Type, // online/idle/dnd/invisible
+				})
+			}
+			time.Sleep(time.Duration(presence.Duration * int(time.Second)))
+		}
+	}
 }
 
 func isBotAdmin(id string) bool {

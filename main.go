@@ -84,7 +84,6 @@ func getFeedCountLabel(filterGroup int) string {
 	} else { // 2+
 		return fmt.Sprintf("%d feeds", feedCount)
 	}
-	return ""
 }
 
 func dataKeyReplacement(input string) string {
@@ -108,7 +107,7 @@ func dataKeyReplacement(input string) string {
 			{"{{timeNowLong24}}", timeNow.Format("15:04:05 MST - 2 January, 2006")},
 			{"{{uptime}}", durafmt.ParseShort(time.Since(timeLaunched)).String()},
 
-			{"{{linkCount}}", string(refCount())},
+			{"{{linkCount}}", fmt.Sprint(refCount())},
 			{"{{feedCount}}", string(getFeedCountLabel(feed0))},
 		}
 		for _, key := range keys {
@@ -146,7 +145,7 @@ func main() {
 		go func() {
 			for {
 				// Rotate Presences
-				for _, presence := range discordConfig.Presence {
+				for presenceKey, presence := range discordConfig.Presence {
 					enabled := false
 					if presence.Enabled == nil {
 						enabled = true
@@ -154,21 +153,40 @@ func main() {
 						enabled = *presence.Enabled
 					}
 					if enabled {
+						if presence.Duration == 0 {
+							presence.Duration = 15
+						}
+						// Only change status type, no text.
 						if presence.Status == "" {
 							discord.UpdateStatusComplex(discordgo.UpdateStatusData{
 								Status: presence.Type,
 							})
 						} else {
+							// Format state (referring to it as details) - Presence-specific key replacements
+							dataKeyReplacementPresence := func(input string) string {
+								input = dataKeyReplacement(input)
+								if strings.Contains(input, "{{presenceCount}}") {
+									input = strings.ReplaceAll(input, "{{presenceCount}}",
+										fmt.Sprintf("%d/%d", presenceKey+1, len(discordConfig.Presence)))
+								}
+								if strings.Contains(input, "{{presenceDuration}}") {
+									input = strings.ReplaceAll(input, "{{presenceDuration}}",
+										shortenTime(durafmt.ParseShort(
+											time.Duration(presence.Duration*int(time.Second)),
+										).String()),
+									)
+								}
+								return input
+							}
+							// Update
 							discord.UpdateStatusComplex(discordgo.UpdateStatusData{
 								Activities: []*discordgo.Activity{{
-									Name: dataKeyReplacement(presence.Status),
-									Type: discordgo.ActivityType(presence.Label),
+									Name:  dataKeyReplacementPresence(presence.Status),
+									State: dataKeyReplacementPresence(presence.StatusDetails),
+									Type:  discordgo.ActivityType(presence.Label), // Playing/Listening/Watching/etc
 								}},
-								Status: presence.Type,
+								Status: presence.Type, // online/idle/dnd/invisible
 							})
-						}
-						if presence.Duration == 0 {
-							presence.Duration = 30
 						}
 						time.Sleep(time.Duration(presence.Duration * int(time.Second)))
 					}

@@ -20,11 +20,12 @@ var (
 )
 
 type configDiscordPresence struct {
-	Enabled  *bool                  `json:"enabled"`
-	Type     string                 `json:"type"`     // Online, Idle, DND, Invisible
-	Label    discordgo.ActivityType `json:"label"`    // Playing[0], Streaming[1], Listening[2], Watching[3], Custom[4,DOESNT WORK], Competing[5]
-	Status   string                 `json:"status"`   // text
-	Duration int                    `json:"duration"` // seconds
+	Enabled       *bool                  `json:"enabled"`       // really just to optionally disable
+	Type          string                 `json:"type"`          // Online, Idle, DND, Invisible
+	Label         discordgo.ActivityType `json:"label"`         // Playing[0], Streaming[1], Listening[2], Watching[3], Custom[4,DOESNT WORK], Competing[5]
+	Status        string                 `json:"status"`        // text
+	StatusDetails string                 `json:"statusDetails"` // text
+	Duration      int                    `json:"duration"`      // seconds to sleep after changing to this.
 }
 
 type configDiscordSettings struct {
@@ -40,46 +41,52 @@ type configDiscordSettings struct {
 var discordConfigDefault = configDiscordSettings{
 	Presence: []configDiscordPresence{
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusOnline),
-			Label:    0,
-			Status:   "Discord Feedbot",
-			Duration: 10,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusOnline),
+			Label:         0,
+			Status:        "Discord Feedbot",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      10,
 		},
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusOnline),
-			Label:    0,
-			Status:   "DFB {{dfbVersion}}",
-			Duration: 15,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusOnline),
+			Label:         0,
+			Status:        "DFB {{dfbVersion}}",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      15,
 		},
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusDoNotDisturb),
-			Label:    3,
-			Status:   "{{linkCount}} links stored",
-			Duration: 30,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusDoNotDisturb),
+			Label:         3,
+			Status:        "{{linkCount}} updates sent",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      30,
 		},
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusDoNotDisturb),
-			Label:    3,
-			Status:   "{{feedCount}} feeds",
-			Duration: 30,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusDoNotDisturb),
+			Label:         3,
+			Status:        "{{feedCount}}",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      30,
 		},
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusDoNotDisturb),
-			Label:    2,
-			Status:   "{{numServers}} servers",
-			Duration: 15,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusDoNotDisturb),
+			Label:         2,
+			Status:        "{{numServers}} servers",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      15,
 		},
 		{
-			Enabled:  &discordConfigDef_Presence_Enabled,
-			Type:     string(discordgo.StatusIdle),
-			Label:    3,
-			Status:   "for {{uptime}}",
-			Duration: 30,
+			Enabled:       &discordConfigDef_Presence_Enabled,
+			Type:          string(discordgo.StatusIdle),
+			Label:         3,
+			Status:        "for {{uptime}}",
+			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
+			Duration:      30,
 		},
 	},
 }

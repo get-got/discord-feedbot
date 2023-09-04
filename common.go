@@ -12,20 +12,7 @@ import (
 	"github.com/hako/durafmt"
 )
 
-func wrapHyphens(i string, l int) string {
-	n := i
-	if len(n) < l {
-		n = "- " + n + " -"
-		for len(n) < l {
-			n = "-" + n + "-"
-		}
-	}
-	return n
-}
-
-func wrapHyphensW(i string) string {
-	return wrapHyphens(i, 80)
-}
+//#region Program functions
 
 func uptime() time.Duration {
 	return time.Since(timeLaunched) //.Truncate(time.Second)
@@ -38,6 +25,10 @@ func properExit() {
 	time.Sleep(15 * time.Second)
 	os.Exit(1)
 }
+
+//#endregion
+
+//#region String functions
 
 func containsAll(haystack string, needles []string) bool {
 	for _, needle := range needles {
@@ -55,6 +46,21 @@ func containsAny(haystack string, needles []string) bool {
 		}
 	}
 	return false
+}
+
+func wrapHyphens(i string, l int) string {
+	n := i
+	if len(n) < l {
+		n = "- " + n + " -"
+		for len(n) < l {
+			n = "-" + n + "-"
+		}
+	}
+	return n
+}
+
+func wrapHyphensW(i string) string {
+	return wrapHyphens(i, 80)
 }
 
 func hexdec(s string) (string, error) {
@@ -75,3 +81,27 @@ func disableLinks(s string) string {
 	s = strings.ReplaceAll(s, "www.", "")
 	return s
 }
+
+func shortenTime(input string) string {
+	input = strings.ReplaceAll(input, " nanoseconds", "ns")
+	input = strings.ReplaceAll(input, " nanosecond", "ns")
+	input = strings.ReplaceAll(input, " microseconds", "μs")
+	input = strings.ReplaceAll(input, " microsecond", "μs")
+	input = strings.ReplaceAll(input, " milliseconds", "ms")
+	input = strings.ReplaceAll(input, " millisecond", "ms")
+	input = strings.ReplaceAll(input, " seconds", "s")
+	input = strings.ReplaceAll(input, " second", "s")
+	input = strings.ReplaceAll(input, " minutes", "m")
+	input = strings.ReplaceAll(input, " minute", "m")
+	input = strings.ReplaceAll(input, " hours", "h")
+	input = strings.ReplaceAll(input, " hour", "h")
+	input = strings.ReplaceAll(input, " days", "d")
+	input = strings.ReplaceAll(input, " day", "d")
+	input = strings.ReplaceAll(input, " weeks", "w")
+	input = strings.ReplaceAll(input, " week", "w")
+	input = strings.ReplaceAll(input, " months", "mo")
+	input = strings.ReplaceAll(input, " month", "mo")
+	return input
+}
+
+//#endregion

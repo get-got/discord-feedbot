@@ -18,6 +18,6 @@ const (
 var (
 	pathData = "data"
 
-	pathDataCookies        = pathData + string(os.PathSeparator) + "cookies"
-	pathDataCookiesTwitter = pathDataCookies + string(os.PathSeparator) + "twitter.json"
+	pathDataCookies        = pathData + string(os.PathSeparator) + "cookies"             // data/cookies
+	pathDataCookiesTwitter = pathDataCookies + string(os.PathSeparator) + "twitter.json" // data/cookies/twitter.json
 )

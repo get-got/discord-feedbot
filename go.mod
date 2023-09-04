@@ -3,6 +3,7 @@ module github.com/get-got/discord-feedbot
 go 1.19
 
 require (
+	github.com/Davincible/goinsta v0.0.0-20220425072628-96aad7267204
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
@@ -18,10 +19,18 @@ require (
 require (
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/chromedp/cdproto v0.0.0-20220217222649-d8c14a5c6edf // indirect
+	github.com/chromedp/chromedp v0.7.8 // indirect
+	github.com/chromedp/sysutil v1.0.0 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect

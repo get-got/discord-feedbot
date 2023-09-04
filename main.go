@@ -178,7 +178,7 @@ func main() {
 			select {
 			case instagramAccount_Triggered := <-instagramAccount_Channel:
 				{
-					if err := handleInstagramAccount(instagramAccount_Triggered.Config.(configModuleInstagramAccount)); err != nil {
+					if err := handleInstagramAccount(instagramAccount_Triggered.Config.(configModuleInstagramAcc)); err != nil {
 						log.Println(l.SetTask("handleInstagramAccount").SetFlag(&lError).Log(
 							"Error handling Instagram Account: %s", err.Error()))
 						l.Clear()

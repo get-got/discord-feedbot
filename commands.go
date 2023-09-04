@@ -400,7 +400,7 @@ var (
 					optionMap[opt.Name] = opt
 				}
 
-				var newFeed configModuleInstagramAccount
+				var newFeed configModuleInstagramAcc
 				newFeed.Destinations = []string{i.ChannelID}
 				if opt, ok := optionMap["handle"]; ok {
 					newFeed.ID = opt.StringValue()

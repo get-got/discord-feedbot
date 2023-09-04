@@ -257,8 +257,7 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 	tweets := twitterScraper.GetTweets(context.Background(), account.Handle, 50)
 
 	// FOREACH Tweet
-	//for i := len(tweets) - 1; i >= 0; i-- { // process oldest to newest
-	for tweet := range tweets {
+	for tweet := range tweets { // because iterating a channel, len returns 0
 		if tweet.ID == "" {
 			continue
 		}

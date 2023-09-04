@@ -18,6 +18,7 @@ const (
 var (
 	pathData = "data"
 
-	pathDataCookies        = pathData + string(os.PathSeparator) + "cookies"             // data/cookies
-	pathDataCookiesTwitter = pathDataCookies + string(os.PathSeparator) + "twitter.json" // data/cookies/twitter.json
+	pathDataCookies          = pathData + string(os.PathSeparator) + "cookies"               // data/cookies
+	pathDataCookiesInstagram = pathDataCookies + string(os.PathSeparator) + "instagram.json" // data/cookies/instagram.json
+	pathDataCookiesTwitter   = pathDataCookies + string(os.PathSeparator) + "twitter.json"   // data/cookies/twitter.json
 )

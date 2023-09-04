@@ -7,7 +7,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/Davincible/goinsta"
 	"github.com/fatih/color"
 )
 
@@ -17,11 +19,11 @@ var (
 )
 
 type configModuleInstagram struct {
-	WaitMins int                            `json:"waitMins,omitempty"`
-	Accounts []configModuleInstagramAccount `json:"accounts"`
+	WaitMins int                        `json:"waitMins,omitempty"`
+	Accounts []configModuleInstagramAcc `json:"accounts"`
 }
 
-type configModuleInstagramAccount struct {
+type configModuleInstagramAcc struct {
 	// Main
 	Name         string   `json:"moduleName"`
 	ID           string   `json:"id"`
@@ -68,21 +70,86 @@ func loadConfig_Module_Instagram() error {
 }
 
 var (
-	instagramEmail    string
-	instagramPassword string
+	instagramEmail     string
+	instagramPassword  string
+	instagramConnected bool = false
+
+	instagramScraper *goinsta.Instagram
 )
 
 func openInstagram() error {
+	l := logInstructions{
+		Location: "openInstagram",
+		Task:     "login",
+		Inline:   false,
+		Color:    color.MagentaString,
+	}
+
 	if instagramEmail == "" || instagramPassword == "" {
 		return errors.New("instagram credentials are incomplete")
+	} else {
+		log.Println(l.Log("Connecting to Instagram..."))
+
+		//TODO: Proxy Support
+
+		// Login Loop
+		instagramLoginCount := 0
+	do_instagram_login:
+		instagramLoginCount++
+		if instagramLoginCount > 1 {
+			time.Sleep(3 * time.Second)
+		}
+		if instagramScraper, err := goinsta.Import(pathDataCookiesInstagram); err != nil {
+			instagramScraper = goinsta.New(instagramEmail, instagramPassword)
+			if err := instagramScraper.Login(); err != nil {
+				log.Println(l.SetFlag(&lError).Log("Login Error: %s", err.Error()))
+				if instagramLoginCount <= 3 {
+					goto do_instagram_login
+				} else {
+					log.Println(l.SetFlag(&lError).Log("Failed to login to Instagram, the bot will not fetch this media..."))
+					l.ClearFlag()
+					return errors.New("login failed")
+				}
+			} else {
+				log.Println(l.LogC(color.HiMagentaString, "Connected to %s via new login", instagramEmail))
+				instagramConnected = true
+				defer instagramScraper.Export(pathDataCookiesInstagram)
+			}
+		} else {
+			log.Println(l.LogC(color.HiMagentaString, "Connected to %s via cache", instagramEmail))
+			instagramConnected = true
+		}
+		//TODO: Reinforce Proxy Support
 	}
-	//TODO: ig login requires cache directories
+
 	return nil
 }
 
-func handleInstagramAccount(account configModuleInstagramAccount) error {
+func handleInstagramAccount(account configModuleInstagramAcc) error {
 	log.Printf(color.HiGreenString("<DEBUG> instagram account event fired: %s"), account.ID)
 	return nil
+}
+
+/*func handleInstagramAccCmdOpts(config *configModuleInstagramAcc,
+optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption,
+s *discordgo.Session, i *discordgo.InteractionCreate) error {*/
+
+func getInstagramAccConfigIndex(name string) int {
+	for k, feed := range instagramConfig.Accounts {
+		if strings.EqualFold(name, feed.Name) {
+			return k
+		}
+	}
+	return -1
+}
+
+func getInstagramAccConfig(name string) *configModuleInstagramAcc {
+	i := getInstagramAccConfigIndex(name)
+	if i == -1 {
+		return nil
+	} else {
+		return &instagramConfig.Accounts[i]
+	}
 }
 
 func existsInstagramConfig(name string) bool {
@@ -93,3 +160,7 @@ func existsInstagramConfig(name string) bool {
 	}
 	return false
 }
+
+// func updateInstagramAccConfig(name string, config configModuleInstagramAcc) bool {
+
+// func deleteInstagramAccConfig(name string) error

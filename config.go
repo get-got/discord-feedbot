@@ -115,8 +115,9 @@ var (
 )
 
 type configGeneralSettings struct {
+	Verbose        bool   `json:"verbose"`
 	Debug          bool   `json:"debug"`
-	LogLevel       int    `json:"logLevel"`
+	Debug2         bool   `json:"debug2"` // verbose debug
 	OutputSettings bool   `json:"outputSettings"`
 	DefaultColor   string `json:"defaultColor,omitempty"`
 }

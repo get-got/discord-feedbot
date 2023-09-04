@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/fatih/color"
@@ -91,14 +92,22 @@ func loadConfig_Module_RSS() error {
 }
 
 func handleRssFeed(feed configModuleRssFeed) error {
-	prefixHere := fmt.Sprintf("handleRssFeed(\"%s\"): ", feed.Name)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ RSS: %s", feed.Name))
+	l := logInstructions{
+		Location: fmt.Sprintf("handleRssFeed(@%s): ", feed.Name),
+		Task:     "",
+		Inline:   false,
+		Color:    color.BlueString,
+	}
+	if generalConfig.Debug2 {
+		log.Println(l.SetFlag(&lDebug2).Log("FEED STARTING ... RSS Feed \"%s\" %s", feed.Name, feed.URL))
+		l.ClearFlag()
+	}
 	//
 	fp := gofeed.NewParser()
 	fp.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
 	rss, err := fp.ParseURL(feed.URL)
 	if err != nil {
-		return fmt.Errorf(prefixHere+"error parsing rss feed: %s", err.Error())
+		return fmt.Errorf(feed.Name+": error parsing rss feed: %s", err.Error())
 	} else {
 		username := rss.Title
 		avatar := ""
@@ -110,7 +119,7 @@ func handleRssFeed(feed configModuleRssFeed) error {
 			} else {
 				twitterUser, err := twitterScraper.GetProfile(handle)
 				if err != nil {
-					return fmt.Errorf(prefixHere+"feed uses Twitter for appearance but failed to fetch twitter user: %s", err.Error())
+					return fmt.Errorf(feed.Name+": feed uses Twitter for appearance but failed to fetch twitter user: %s", err.Error())
 				}
 				username = twitterUser.Name
 				avatar = strings.ReplaceAll(twitterUser.Avatar, "_normal", "_400x400")
@@ -124,6 +133,11 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		}
 		if feed.Avatar != "" {
 			avatar = feed.Avatar
+		}
+
+		if generalConfig.Debug2 {
+			log.Println(l.SetFlag(&lDebug2).Log("FEED PARSED ... %d items - titled \"%s\"", len(rss.Items), rss.Title))
+			l.ClearFlag()
 		}
 
 		// FOREACH Entry
@@ -217,6 +231,7 @@ func handleRssFeed(feed configModuleRssFeed) error {
 
 			if vibeCheck { //TODO: AND meets days old criteria
 				for _, destination := range feed.Destinations {
+					sendAttempts := 0
 					if !refCheckSentToChannel(link, destination.Channel) {
 						tags := ""
 						for _, tag := range destination.Tags {
@@ -232,6 +247,10 @@ func handleRssFeed(feed configModuleRssFeed) error {
 						//TODO: Published X \n link
 						reply := tags + link
 						// SEND
+					resend:
+						sendAttempts++
+						webhookInfo := fmt.Sprintf("WEBHOOK to %s (\"%s\")", destination.Channel, link)
+						// SEND
 						err = sendWebhook(destination.Channel, link, discordwebhook.Message{
 							Username:  &username,
 							AvatarUrl: &avatar,
@@ -239,12 +258,45 @@ func handleRssFeed(feed configModuleRssFeed) error {
 						}, moduleNameRSS)
 						if err != nil {
 							// we want it to process the rest, so no err return
-							log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
+							//TODO: implement this universally vvvvvvvv
+							if strings.Contains(err.Error(), "resource is being rate limited") {
+								log.Println(l.SetFlag(&lError).Log(
+									"%s is being rate limited... delaying 3 seconds and trying again...", webhookInfo))
+								l.ClearFlag()
+								time.Sleep(3 * time.Second)
+								if sendAttempts < 5 {
+									goto resend
+								} else {
+									log.Println(l.SetFlag(&lError).Log(
+										"%s was rate limited more than 5 times, giving up...", webhookInfo))
+									l.ClearFlag()
+								}
+								//TODO: ^^^^^^^
+							} else {
+								log.Println(l.SetFlag(&lError).Log(
+									"%s encountered an error while sending: %s", webhookInfo, err.Error()))
+								l.ClearFlag()
+							}
+						} else {
+							if generalConfig.Debug2 {
+								log.Println(l.SetFlag(&lDebug2).Log("SENT %s to %s", link, destination.Channel))
+								l.ClearFlag()
+							}
+						}
+					} else {
+						if generalConfig.Debug2 {
+							log.Println(l.SetFlag(&lDebug2).LogC(color.BlueString, "-- ALREADY SENT %s to %s", link, destination.Channel))
+							l.ClearFlag()
 						}
 					}
 				}
 			}
 		}
+	}
+
+	if generalConfig.Debug2 {
+		log.Println(l.SetFlag(&lDebug2).Log("FEED COMPLETED ... RSS Feed %s", feed.Name))
+		l.ClearFlag()
 	}
 
 	return nil

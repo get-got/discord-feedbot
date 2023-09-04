@@ -156,6 +156,13 @@ var (
 func openDiscord() error {
 	var err error
 
+	l := logInstructions{
+		Location: "openDiscord()",
+		Task:     "login",
+		Inline:   false,
+		Color:    color.GreenString,
+	}
+
 	discord, err = discordgo.New("Bot " + discordToken)
 	if err != nil {
 		return fmt.Errorf("error creating discord client: %s", err.Error())
@@ -186,7 +193,7 @@ func openDiscord() error {
 		}
 	})
 
-	log.Println(color.HiGreenString("Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
+	log.Println(l.LogC(lSuccess.Color, "Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
 
 	return nil
 }

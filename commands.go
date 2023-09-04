@@ -874,7 +874,13 @@ var (
 var slashCommands []*discordgo.ApplicationCommand
 
 func addSlashCommands() {
-	log.Println(color.CyanString("Initializing slash commands...\tCommands won't work until this finishes..."))
+	l := logInstructions{
+		Location: "addSlashCommands",
+		Task:     "",
+		Inline:   false,
+		Color:    color.CyanString,
+	}
+	log.Println(l.Log("Initializing slash commands...\tCommands won't work until this finishes..."))
 	if discord.State.User != nil {
 		slashCommands = make([]*discordgo.ApplicationCommand, len(commands))
 		for i, v := range commands {
@@ -884,21 +890,29 @@ func addSlashCommands() {
 			}
 			slashCommands[i] = cmd
 		}
-		log.Println(color.HiCyanString("Slash commands created!\tYou can now use Discord commands..."))
+		log.Println(l.LogC(color.HiCyanString, "Slash commands created!\tYou can now use Discord commands..."))
 	} else {
-		log.Println(color.HiRedString("Slash commands skipped due to empty user state data..."))
+		log.Println(l.SetFlag(&lError).Log("Slash commands skipped due to empty user state data..."))
+		l.ClearFlag()
 	}
 }
 
 func deleteSlashCommands() {
-	log.Println(color.CyanString("Deleting slash commands...\tThis may take a bit..."))
+	l := logInstructions{
+		Location: "deleteSlashCommands",
+		Task:     "",
+		Inline:   false,
+		Color:    color.CyanString,
+	}
+	log.Println(l.Log("Deleting slash commands...\tThis may take a bit..."))
 	for _, v := range slashCommands {
 		err := discord.ApplicationCommandDelete(discord.State.User.ID, "", v.ID)
 		if err != nil {
-			log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+			log.Println(l.SetFlag(&lError).Log("Cannot delete '%v' command: %v", v.Name, err))
+			l.ClearFlag()
 		}
 	}
-	log.Println(color.HiCyanString("Slash commands deleted!"))
+	log.Println(l.LogC(color.HiCyanString, "Slash commands deleted!"))
 }
 
 func interactionOptMap(i *discordgo.InteractionCreate) map[string]*discordgo.ApplicationCommandInteractionDataOption {

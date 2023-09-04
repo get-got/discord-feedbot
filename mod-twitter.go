@@ -117,6 +117,12 @@ var (
 )
 
 func openTwitter() error {
+	l := logInstructions{
+		Location: "openTwitter",
+		Task:     "login",
+		Inline:   false,
+		Color:    color.MagentaString,
+	}
 
 	twitterImport := func() error {
 		f, err := os.Open(pathDataCookiesTwitter)
@@ -155,7 +161,7 @@ func openTwitter() error {
 
 	if twitterUsername != "" &&
 		twitterPassword != "" {
-		log.Println(color.MagentaString("Connecting to Twitter (X)..."))
+		log.Println(l.Log("Connecting to Twitter (X)..."))
 
 		twitterLoginCount := 0
 	do_twitter_login:
@@ -167,37 +173,48 @@ func openTwitter() error {
 		if twitterImport() != nil {
 			twitterScraper.ClearCookies()
 			if err := twitterScraper.Login(twitterUsername, twitterPassword); err != nil {
-				log.Println(color.HiRedString("Login Error: %s", err.Error()))
+				log.Println(l.SetFlag(&lError).Log("Login Error: %s", err.Error()))
+				l.ClearFlag()
 				if twitterLoginCount <= 3 {
 					goto do_twitter_login
-				} else {
-					log.Println(color.HiRedString(
+				} else { // Login Failed
+					log.Println(l.SetFlag(&lError).Log(
 						"Failed to login to Twitter (X), the bot will not fetch this media..."))
+					l.ClearFlag()
 				}
-			} else {
+			} else { // Connected!
 				twitterConnected = true
 				defer twitterExport()
-				log.Println(color.HiMagentaString("Connected"))
 				if twitterScraper.IsLoggedIn() {
-					log.Println(color.HiMagentaString("Connected to @%s via new login", twitterUsername))
+					log.Println(l.LogC(color.HiMagentaString, "Connected to @%s via new login", twitterUsername))
 				} else {
-					log.Println(color.HiRedString("Scraper login seemed successful but bot is not logged in, Twitter (X) parsing may not work..."))
+					log.Println(l.SetFlag(&lWarning).Log(
+						"Scraper login seemed successful but bot is not logged in, Twitter (X) parsing may not work..."))
+					l.ClearFlag()
 				}
 			}
 		} else {
-			log.Println(color.HiMagentaString("Connected to @%s via cache", twitterUsername))
+			log.Println(l.LogC(color.HiMagentaString, "Connected to @%s via cache", twitterUsername))
 			twitterConnected = true
 		}
 	} else {
-		log.Println(color.MagentaString("Twitter (X) credentials missing, the bot will not fetch this media..."))
+		log.Println(l.Log("Twitter (X) credentials missing, the bot will not fetch this media..."))
 	}
 
 	return nil
 }
 
 func handleTwitterAcc(account configModuleTwitterAcc) error {
-	prefixHere := fmt.Sprintf("handleTwitterAccount(%s): ", account.Handle)
-	log.Println(color.BlueString("(DEBUG) EVENT FIRED ~ TWITTER ACCOUNT: %s @%s", account.Name, account.Handle))
+	l := logInstructions{
+		Location: fmt.Sprintf("handleTwitterAccount(@%s): ", account.Handle),
+		Task:     "",
+		Inline:   false,
+		Color:    color.BlueString,
+	}
+	if generalConfig.Debug2 {
+		log.Println(l.SetFlag(&lDebug2).Log("FEED STARTING ... Twitter Account \"%s\" @%s", account.Name, account.Handle))
+		l.ClearFlag()
+	}
 
 	// Vars
 	/*includeRetweets := false
@@ -406,7 +423,8 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 			prefixLikes, suffixLikes, prefixRetweets, suffixRetweets)
 		embedColor, err := hexdec(userColor)
 		if err != nil {
-			log.Println("Error parsing color: " + err.Error())
+			log.Println(l.SetFlag(&lError).Log("Error parsing color: " + err.Error()))
+			l.ClearFlag()
 		}
 
 		//TODO: Embed Author if RT
@@ -426,14 +444,15 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 
 		//TODO: Send video links after embed (poll highest bitrate)
 
-		sendAttempts := 0
 		// PROCESS
 		if vibeCheck { //TODO: AND meets days old criteria
 			for _, destination := range account.Destinations {
+				sendAttempts := 0
 				if !refCheckSentToChannel(tweetLink, destination.Channel) {
 					// SEND
 				resend:
 					sendAttempts++
+					webhookInfo := fmt.Sprintf("WEBHOOK to %s (\"%s\")", destination.Channel, tweetLink)
 					err = sendWebhook(destination.Channel, tweetLink, discordwebhook.Message{
 						Username:  &username,
 						AvatarUrl: &avatar,
@@ -451,19 +470,42 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 						// we want it to process the rest, so no err return
 						//TODO: implement this universally vvvvvvvv
 						if strings.Contains(err.Error(), "resource is being rate limited") {
-							log.Println(color.HiRedString(prefixHere + "webhook is being rate limited, delaying 2 seconds and trying again..."))
-							time.Sleep(2 * time.Second)
+							log.Println(l.SetFlag(&lError).Log(
+								"%s is being rate limited... delaying 3 seconds and trying again...", webhookInfo))
+							l.ClearFlag()
+							time.Sleep(3 * time.Second)
 							if sendAttempts < 5 {
 								goto resend
+							} else {
+								log.Println(l.SetFlag(&lError).Log(
+									"%s was rate limited more than 5 times, giving up...", webhookInfo))
+								l.ClearFlag()
 							}
 							//TODO: ^^^^^^^
 						} else {
-							log.Println(color.HiRedString(prefixHere+"error sending webhook message: %s", err.Error()))
+							log.Println(l.SetFlag(&lError).Log(
+								"%s encountered an error while sending: %s", webhookInfo, err.Error()))
+							l.ClearFlag()
 						}
+					} else {
+						if generalConfig.Debug2 {
+							log.Println(l.SetFlag(&lDebug2).Log("SENT %s to %s", tweetLink, destination.Channel))
+							l.ClearFlag()
+						}
+					}
+				} else {
+					if generalConfig.Debug2 {
+						log.Println(l.SetFlag(&lDebug2).LogC(color.BlueString, "-- ALREADY SENT %s to %s", tweetLink, destination.Channel))
+						l.ClearFlag()
 					}
 				}
 			}
 		}
+	}
+
+	if generalConfig.Debug2 {
+		log.Println(l.SetFlag(&lDebug2).Log("FEED COMPLETED ... Twitter Account \"%s\" @%s", account.Name, account.Handle))
+		l.ClearFlag()
 	}
 
 	return nil

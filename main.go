@@ -44,28 +44,39 @@ func init() {
 	loop = make(chan os.Signal, 1)
 	timeLaunched = time.Now()
 
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lmsgprefix)
-	log.SetPrefix("| ")
-	log.SetOutput(color.Output)
+	//#region Initialize Logging
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile | log.Lmsgprefix)
+	log.SetOutput(color.Output) // TODO: log to file option
 	log.Println(color.HiCyanString(wrapHyphensW(fmt.Sprintf("Welcome to %s v%s", projectLabel, projectVersion))))
+	l := logInstructions{
+		Location: "INITITALIZATION",
+		Task:     "entry tasks",
+		Inline:   false,
+		Color:    color.CyanString,
+	}
+	//#endregion
 
 	//TODO: Github Update Check
 
 	// Load Configs
+	l.Task = "loadConfig"
 	settingsErrors := loadConfig()
 	if len(settingsErrors) > 0 {
-		log.Println(color.HiRedString("loadConfig(): Detected errors in settings..."))
+		log.Println(l.SetFlag(&lError).Log("Detected errors in settings..."))
+		l.Clear()
 		for section, err := range settingsErrors {
 			if err != nil {
-				log.Println(color.RedString("loadConfig()[\"%s\"] ERROR: %s", section, err))
+				log.Println(l.SetFlag(&lError).Log("\"%s\" ERROR: %s", section, err))
+				l.Clear()
 			}
 		}
 	}
 
-	//TODO: Database Load, create if missing
-	databaseError := loadDatabase()
-	if databaseError != nil {
-		log.Println(color.RedString("loadDatabase() ERROR: %s", databaseError))
+	// Load Database
+	l.Task = "loadDatabase"
+	if databaseError := loadDatabase(); databaseError != nil {
+		log.Println(l.SetFlag(&lError).Log("ERROR: %s", databaseError))
+		l.Clear()
 	}
 }
 
@@ -120,9 +131,16 @@ func dataKeyReplacement(input string) string {
 }
 
 func main() {
+	l := logInstructions{
+		Location: "MAIN",
+		Task:     "startup",
+		Inline:   false,
+		Color:    color.GreenString,
+	}
 
 	if err := openDiscord(); err != nil {
-		log.Println(color.HiRedString("DISCORD LOGIN ERROR: %s", err))
+		log.Println(l.SetFlag(&lError).Log("DISCORD LOGIN ERROR: %s", err))
+		l.ClearFlag()
 	}
 	if discordConfig.DeleteCommands {
 		deleteSlashCommands()
@@ -130,12 +148,14 @@ func main() {
 	go addSlashCommands()
 	for api, err := range openAPIs() {
 		if err != nil {
-			log.Println(color.HiRedString("API LOGIN ERROR (%s): %s", api, err))
+			log.Println(l.SetFlag(&lError).Log("API LOGIN ERROR: (%s): %s", api, err))
+			l.ClearFlag()
 		}
 	}
 
-	if generalConfig.Debug {
-		log.Println(color.HiYellowString("Startup finished, took %s...", uptime()))
+	if generalConfig.Verbose {
+		log.Println(l.SetFlag(&lVerbose).Log("Startup finished, took %s...", uptime()))
+		l.ClearFlag()
 	}
 
 	// Start Presence Loop
@@ -159,19 +179,25 @@ func main() {
 			case instagramAccount_Triggered := <-instagramAccount_Channel:
 				{
 					if err := handleInstagramAccount(instagramAccount_Triggered.Config.(configModuleInstagramAccount)); err != nil {
-						log.Println(color.HiRedString("Error handling Instagram Account: %s", err.Error()))
+						log.Println(l.SetTask("handleInstagramAccount").SetFlag(&lError).Log(
+							"Error handling Instagram Account: %s", err.Error()))
+						l.Clear()
 					}
 				}
 			case rssFeed_Triggered := <-rssFeed_Channel:
 				{
 					if err := handleRssFeed(rssFeed_Triggered.Config.(configModuleRssFeed)); err != nil {
-						log.Println(color.HiRedString("Error handling RSS Feed: %s", err.Error()))
+						log.Println(l.SetTask("handleRssFeed").SetFlag(&lError).Log(
+							"Error handling RSS Feed: %s", err.Error()))
+						l.Clear()
 					}
 				}
 			case twitterAccount_Triggered := <-twitterAccount_Channel:
 				{
 					if err := handleTwitterAcc(twitterAccount_Triggered.Config.(configModuleTwitterAcc)); err != nil {
-						log.Println(color.HiRedString("Error handling Twitter Account: %s", err.Error()))
+						log.Println(l.SetTask("handleTwitterAcc").SetFlag(&lError).Log(
+							"Error handling Twitter Account: %s", err.Error()))
+						l.Clear()
 					}
 				}
 			}
@@ -183,14 +209,16 @@ func main() {
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
 
+	l.Task = "exit"
+
 	if discordConfig.DeleteCommands {
 		deleteSlashCommands()
 	}
 
-	log.Println(color.GreenString("Logging out of discord..."))
+	log.Println(l.Log("Logging out of discord..."))
 	discord.Close()
 
-	log.Println(color.HiRedString("Exiting... "))
+	log.Println(l.LogC(color.HiRedString, "Exiting..."))
 }
 
 func openAPIs() map[string]error {

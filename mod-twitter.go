@@ -161,7 +161,7 @@ func openTwitter() error {
 
 	if twitterUsername != "" &&
 		twitterPassword != "" {
-		log.Println(l.Log("Connecting to Twitter (X)..."))
+		log.Println(l.LogI(true, "Connecting to Twitter (X)..."))
 
 		twitterLoginCount := 0
 	do_twitter_login:
@@ -186,7 +186,7 @@ func openTwitter() error {
 				twitterConnected = true
 				defer twitterExport()
 				if twitterScraper.IsLoggedIn() {
-					log.Println(l.LogC(color.HiMagentaString, "Connected to @%s via new login", twitterUsername))
+					log.Println(l.LogCI(color.HiMagentaString, true, "Connected to @%s via new login", twitterUsername))
 				} else {
 					log.Println(l.SetFlag(&lWarning).Log(
 						"Scraper login seemed successful but bot is not logged in, Twitter (X) parsing may not work..."))
@@ -194,11 +194,11 @@ func openTwitter() error {
 				}
 			}
 		} else {
-			log.Println(l.LogC(color.HiMagentaString, "Connected to @%s via cache", twitterUsername))
+			log.Println(l.LogCI(color.HiMagentaString, true, "Connected to @%s via cache", twitterUsername))
 			twitterConnected = true
 		}
 	} else {
-		log.Println(l.Log("Twitter (X) credentials missing, the bot will not fetch this media..."))
+		log.Println(l.LogI(true, "Twitter (X) credentials missing, the bot will not fetch this media..."))
 	}
 
 	return nil
@@ -211,8 +211,8 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 		Inline:   false,
 		Color:    color.BlueString,
 	}
-	if generalConfig.Debug2 {
-		log.Println(l.SetFlag(&lDebug2).Log("FEED STARTING ... Twitter Account \"%s\" @%s", account.Name, account.Handle))
+	if generalConfig.Debug {
+		log.Println(l.SetFlag(&lDebug).LogI(true, "FEED STARTING ... Twitter Account \"%s\" @%s", account.Name, account.Handle))
 		l.ClearFlag()
 	}
 
@@ -486,24 +486,24 @@ func handleTwitterAcc(account configModuleTwitterAcc) error {
 								"%s encountered an error while sending: %s", webhookInfo, err.Error()))
 							l.ClearFlag()
 						}
-					} else {
-						if generalConfig.Debug2 {
-							log.Println(l.SetFlag(&lDebug2).Log("SENT %s to %s", tweetLink, destination.Channel))
-							l.ClearFlag()
-						}
-					}
-				} else {
-					if generalConfig.Debug2 {
-						log.Println(l.SetFlag(&lDebug2).LogC(color.BlueString, "-- ALREADY SENT %s to %s", tweetLink, destination.Channel))
+					} else if generalConfig.Debug2 {
+						log.Println(l.SetFlag(&lDebug2).LogI(true, "SENT %s to %s", tweetLink, destination.Channel))
 						l.ClearFlag()
 					}
+				} else if generalConfig.Debug2 {
+					log.Println(l.SetFlag(&lDebug2).LogCI(color.BlueString, true, "- ALREADY SENT %s to %s", tweetLink, destination.Channel))
+					l.ClearFlag()
 				}
 			}
 		}
 	}
 
-	if generalConfig.Debug2 {
-		log.Println(l.SetFlag(&lDebug2).Log("FEED COMPLETED ... Twitter Account \"%s\" @%s", account.Name, account.Handle))
+	if generalConfig.Debug {
+		waitMins := twitterConfig.WaitMins
+		if account.WaitMins != nil {
+			waitMins = *account.WaitMins
+		}
+		log.Println(l.SetFlag(&lDebug).LogI(true, "FEED COMPLETED ... Twitter Account \"%s\" @%s ... waiting %d minutes", account.Name, account.Handle, waitMins))
 		l.ClearFlag()
 	}
 

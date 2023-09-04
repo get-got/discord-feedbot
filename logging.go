@@ -14,10 +14,10 @@ type taskFlag struct {
 // Task Flag Types
 var (
 	lStandard taskFlag = taskFlag{"", color.HiWhiteString}
-	lVerbose  taskFlag = taskFlag{"VERBOSE", color.HiCyanString}
-	lDebug    taskFlag = taskFlag{"DEBUG", color.HiYellowString}
+	lVerbose  taskFlag = taskFlag{"VERBOSE", color.CyanString}
+	lDebug    taskFlag = taskFlag{"DEBUG", color.HiCyanString}
 	lDebug2   taskFlag = taskFlag{"DEBUG2", color.HiBlueString}
-	lInfo     taskFlag = taskFlag{"INFO", color.CyanString}
+	lInfo     taskFlag = taskFlag{"INFO", color.BlueString}
 	lTip      taskFlag = taskFlag{"TIP", color.HiMagentaString}
 	lSuccess  taskFlag = taskFlag{"SUCCESS", color.HiGreenString}
 	lWarning  taskFlag = taskFlag{"WARNING", color.HiYellowString}
@@ -51,7 +51,7 @@ func LogWrapper(location string, task string, flag *taskFlag, inline bool,
 	if !inline {
 		linePrefix += "\n\n\t"
 	} else {
-		linePrefix += " "
+		linePrefix += " - "
 	}
 
 	lineSuffix := ""

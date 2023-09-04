@@ -98,8 +98,8 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		Inline:   false,
 		Color:    color.BlueString,
 	}
-	if generalConfig.Debug2 {
-		log.Println(l.SetFlag(&lDebug2).Log("FEED STARTING ... RSS Feed \"%s\" %s", feed.Name, feed.URL))
+	if generalConfig.Debug {
+		log.Println(l.SetFlag(&lDebug).LogI(true, "FEED STARTING ... RSS Feed \"%s\"", feed.Name))
 		l.ClearFlag()
 	}
 	//
@@ -136,7 +136,7 @@ func handleRssFeed(feed configModuleRssFeed) error {
 		}
 
 		if generalConfig.Debug2 {
-			log.Println(l.SetFlag(&lDebug2).Log("FEED PARSED ... %d items - titled \"%s\"", len(rss.Items), rss.Title))
+			log.Println(l.SetFlag(&lDebug2).LogI(true, "FEED PARSED ... %d items - titled \"%s\"", len(rss.Items), rss.Title))
 			l.ClearFlag()
 		}
 
@@ -277,25 +277,25 @@ func handleRssFeed(feed configModuleRssFeed) error {
 									"%s encountered an error while sending: %s", webhookInfo, err.Error()))
 								l.ClearFlag()
 							}
-						} else {
-							if generalConfig.Debug2 {
-								log.Println(l.SetFlag(&lDebug2).Log("SENT %s to %s", link, destination.Channel))
-								l.ClearFlag()
-							}
-						}
-					} else {
-						if generalConfig.Debug2 {
-							log.Println(l.SetFlag(&lDebug2).LogC(color.BlueString, "-- ALREADY SENT %s to %s", link, destination.Channel))
+						} else if generalConfig.Debug2 {
+							log.Println(l.SetFlag(&lDebug2).LogI(true, "SENT %s to %s", link, destination.Channel))
 							l.ClearFlag()
 						}
+					} else if generalConfig.Debug2 {
+						log.Println(l.SetFlag(&lDebug2).LogCI(color.BlueString, true, "- ALREADY SENT %s to %s", link, destination.Channel))
+						l.ClearFlag()
 					}
 				}
 			}
 		}
 	}
 
-	if generalConfig.Debug2 {
-		log.Println(l.SetFlag(&lDebug2).Log("FEED COMPLETED ... RSS Feed %s", feed.Name))
+	if generalConfig.Debug {
+		waitMins := rssConfig.WaitMins
+		if feed.WaitMins != nil {
+			waitMins = *feed.WaitMins
+		}
+		log.Println(l.SetFlag(&lDebug).LogI(true, "FEED COMPLETED ... RSS Feed %s ... waiting %d minutes", feed.Name, waitMins))
 		l.ClearFlag()
 	}
 

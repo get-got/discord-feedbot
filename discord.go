@@ -193,7 +193,7 @@ func openDiscord() error {
 		}
 	})
 
-	log.Println(l.LogC(lSuccess.Color, "Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
+	log.Println(l.LogCI(lSuccess.Color, true, "Discord logged into \"%s\"#%s", discordUser.Username, discordUser.Discriminator))
 
 	return nil
 }

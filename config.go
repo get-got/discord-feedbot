@@ -140,7 +140,7 @@ func loadConfig_Modules_Credentials() error {
 		} else {
 			flickrKey = config.Section("").Key("flickr_key").String()
 
-			instagramEmail = config.Section("").Key("instagram_email").String()
+			instagramUsername = config.Section("").Key("instagram_username").String()
 			instagramPassword = config.Section("").Key("instagram_password").String()
 
 			spotifyClientID = config.Section("").Key("spotify_client_id").String()
@@ -157,9 +157,10 @@ func loadConfig_Modules_Credentials() error {
 
 func loadConfig_Modules() map[string]error {
 	return map[string]error{
-		"mod-rss":       loadConfig_Module_RSS(),
 		"mod-instagram": loadConfig_Module_Instagram(),
+		"mod-rss":       loadConfig_Module_RSS(),
 		"mod-twitter":   loadConfig_Module_Twitter(),
+		"mod-spotify":   loadConfig_Module_Spotify(),
 	}
 }
 

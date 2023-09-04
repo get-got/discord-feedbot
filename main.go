@@ -134,7 +134,7 @@ func main() {
 	l := logInstructions{
 		Location: "MAIN",
 		Task:     "startup",
-		Inline:   false,
+		Inline:   true,
 		Color:    color.GreenString,
 	}
 
@@ -153,10 +153,7 @@ func main() {
 		}
 	}
 
-	if generalConfig.Verbose {
-		log.Println(l.SetFlag(&lVerbose).Log("Startup finished, took %s...", uptime()))
-		l.ClearFlag()
-	}
+	log.Println(l.Log("Startup finished, took %s...", uptime()))
 
 	// Start Presence Loop
 	if discordConfig.Presence != nil && len(discordConfig.Presence) > 0 {
@@ -168,6 +165,7 @@ func main() {
 	}
 
 	// Spawn Feeds
+	l.Task = "spawning feeds"
 	catalogFeeds()
 	feedsClone := feeds
 	for k := range feedsClone {
@@ -201,14 +199,14 @@ func main() {
 					}
 				}
 			}
-			time.Sleep(50 * time.Millisecond) // don't wanna loop infinitely with no delay
+			time.Sleep(100 * time.Millisecond) // don't wanna loop infinitely with no delay
 		}
 	}()
 
+	l.Task = "running"
 	// Infinite loop until interrupted
 	signal.Notify(loop, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, os.Interrupt, os.Kill)
 	<-loop
-
 	l.Task = "exit"
 
 	if discordConfig.DeleteCommands {

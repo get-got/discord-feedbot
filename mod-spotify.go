@@ -10,3 +10,7 @@ var (
 	spotifyClientID     string
 	spotifyClientSecret string
 )
+
+func loadConfig_Module_Spotify() error {
+	return nil
+}

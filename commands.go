@@ -877,7 +877,7 @@ func addSlashCommands() {
 	l := logInstructions{
 		Location: "addSlashCommands",
 		Task:     "",
-		Inline:   false,
+		Inline:   true,
 		Color:    color.CyanString,
 	}
 	log.Println(l.Log("Initializing slash commands...\tCommands won't work until this finishes..."))
@@ -901,7 +901,7 @@ func deleteSlashCommands() {
 	l := logInstructions{
 		Location: "deleteSlashCommands",
 		Task:     "",
-		Inline:   false,
+		Inline:   true,
 		Color:    color.CyanString,
 	}
 	log.Println(l.Log("Deleting slash commands...\tThis may take a bit..."))

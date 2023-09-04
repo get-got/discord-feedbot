@@ -70,7 +70,7 @@ func loadConfig_Module_Instagram() error {
 }
 
 var (
-	instagramEmail     string
+	instagramUsername  string
 	instagramPassword  string
 	instagramConnected bool = false
 
@@ -85,10 +85,10 @@ func openInstagram() error {
 		Color:    color.MagentaString,
 	}
 
-	if instagramEmail == "" || instagramPassword == "" {
+	if instagramUsername == "" || instagramPassword == "" {
 		return errors.New("instagram credentials are incomplete")
 	} else {
-		log.Println(l.Log("Connecting to Instagram..."))
+		log.Println(l.LogI(true, "Connecting to Instagram..."))
 
 		//TODO: Proxy Support
 
@@ -100,7 +100,7 @@ func openInstagram() error {
 			time.Sleep(3 * time.Second)
 		}
 		if instagramScraper, err := goinsta.Import(pathDataCookiesInstagram); err != nil {
-			instagramScraper = goinsta.New(instagramEmail, instagramPassword)
+			instagramScraper = goinsta.New(instagramUsername, instagramPassword)
 			if err := instagramScraper.Login(); err != nil {
 				log.Println(l.SetFlag(&lError).Log("Login Error: %s", err.Error()))
 				if instagramLoginCount <= 3 {
@@ -111,12 +111,12 @@ func openInstagram() error {
 					return errors.New("login failed")
 				}
 			} else {
-				log.Println(l.LogC(color.HiMagentaString, "Connected to %s via new login", instagramEmail))
+				log.Println(l.LogCI(color.HiMagentaString, true, "Connected to %s via new login", instagramUsername))
 				instagramConnected = true
 				defer instagramScraper.Export(pathDataCookiesInstagram)
 			}
 		} else {
-			log.Println(l.LogC(color.HiMagentaString, "Connected to %s via cache", instagramEmail))
+			log.Println(l.LogCI(color.HiMagentaString, true, "Connected to %s via cache", instagramUsername))
 			instagramConnected = true
 		}
 		//TODO: Reinforce Proxy Support

@@ -45,7 +45,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusOnline),
-			Label:         0,
+			Label:         discordgo.ActivityTypeGame,
 			Status:        "Discord Feedbot",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      10,
@@ -53,7 +53,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusOnline),
-			Label:         0,
+			Label:         discordgo.ActivityTypeGame,
 			Status:        "DFB {{dfbVersion}}",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      15,
@@ -61,7 +61,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusDoNotDisturb),
-			Label:         3,
+			Label:         discordgo.ActivityTypeWatching,
 			Status:        "{{linkCount}} updates sent",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      30,
@@ -69,7 +69,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusDoNotDisturb),
-			Label:         3,
+			Label:         discordgo.ActivityTypeWatching,
 			Status:        "{{feedCount}}",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      30,
@@ -77,7 +77,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusDoNotDisturb),
-			Label:         2,
+			Label:         discordgo.ActivityTypeListening,
 			Status:        "{{numServers}} servers",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      15,
@@ -85,7 +85,7 @@ var discordConfigDefault = configDiscordSettings{
 		{
 			Enabled:       &discordConfigDef_Presence_Enabled,
 			Type:          string(discordgo.StatusIdle),
-			Label:         3,
+			Label:         discordgo.ActivityTypeWatching,
 			Status:        "for {{uptime}}",
 			StatusDetails: "<< STATUS {{presenceCount}} @ {{presenceDuration}} >>",
 			Duration:      30,

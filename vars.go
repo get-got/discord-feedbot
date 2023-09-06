@@ -5,7 +5,7 @@ import "os"
 const (
 	projectName        = "discord-feedbot"
 	projectLabel       = "DISCORD FEED BOT (DFB)"
-	projectVersion     = "1.0.0-a.230904"
+	projectVersion     = "1.0.0-a.230905"
 	projectNameVersion = projectName + " " + projectVersion
 	projectColor       = "#00FFFF"
 
